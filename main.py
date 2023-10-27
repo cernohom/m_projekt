@@ -1,0 +1,1 @@
+print("Tvoje mama")
