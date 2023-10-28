@@ -1,63 +1,39 @@
+import typing
+from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton, QLineEdit
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-
-class GraphingCalculator(QMainWindow):
+class MyWindow(QMainWindow):
     def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Graphing Calculator")
-        self.setGeometry(100, 100, 800, 600)
+        super(MyWindow, self).__init__()
+        self.setGeometry(200, 200, 300, 300) # settting parameters for window
+        self.setWindowTitle("Graphic Calculator") # setting window title
+        self.initUI()
 
-        self.central_widget = QWidget()
-        self.setCentralWidget(self.central_widget)
+    def initUI(self):
+        self.b1 = QtWidgets.QPushButton(self)
+        self.b1.setText("click me")
+        self.b1.clicked.connect(self.clicked)
 
-        layout = QVBoxLayout()
-        self.display = QLineEdit("sin(x)")  # Initial function to plot
-        layout.addWidget(self.display)
+        self.label = QtWidgets.QLabel(self)
+        self.label.setText("ez kalkulacka")
+        self.label.move(100,100)
+    
+    def clicked(self):
+        self.label.setText("button pressed")
+        self.update()
+    
+    def update(self):
+        self.label.adjustSize()
 
-        self.canvas = PlotCanvas(self, width=5, height=4)
-        layout.addWidget(self.canvas)
+def window():
+    app = QApplication(sys.argv) #get system info
+    win = MyWindow() # opening window
+    win.setGeometry(200, 200, 300, 300) # settting parameters for window
+    win.setWindowTitle("Graphic Calculator") # setting window title
 
-        plot_button = QPushButton("Plot")
-        plot_button.clicked.connect(self.plot)
-        layout.addWidget(plot_button)
+    
+    win.show() # window showup
+    sys.exit(app.exec_()) # clean exit from app
 
-        self.central_widget.setLayout(layout)
-        
-        # Plot the initial function upon application launch
-        self.plot()
+window()
 
-    def plot(self):
-        function_text = self.display.text()
-        x = np.linspace(-2 * np.pi, 2 * np.pi, 1000)  # Define the range of x values
-        try:
-            y = eval(function_text)  # Evaluate the function
-            self.canvas.plot(x, y)
-        except Exception as e:
-            self.canvas.clear()
-
-class PlotCanvas(FigureCanvas):
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig, self.ax = plt.subplots(figsize=(width, height), dpi=dpi)
-        FigureCanvas.__init__(self, fig)
-        self.setParent(parent)
-
-    def plot(self, x, y):
-        self.ax.clear()
-        self.ax.plot(x, y)
-        self.ax.set_xlabel('x')
-        self.ax.set_ylabel('y')
-        self.ax.set_title('Function Plot')
-        self.draw()
-
-    def clear(self):
-        self.ax.clear()
-        self.draw()
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    calculator = GraphingCalculator()
-    calculator.show()
-    sys.exit(app.exec_())
