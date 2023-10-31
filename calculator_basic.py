@@ -93,7 +93,15 @@ class Ui_MainWindow(object):
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
 
-        self.p1.clicked.connect(lambda:self.clicked(str("1")))
+        for button in [self.p0, self.p1, self.p2, self.p3, self.p4, self.p5, self.p6, self.p7, self.p8, self.p9,
+                      self.pPlus, self.pMinus, self.pTimes, self.pdivided, self.pDEL, self.pEquals]:
+            if button == self.pDEL:
+                button.clicked.connect(self.delete_character)
+            elif button == self.pEquals:
+                button.clicked.connect(self.evaluate_expression)
+            else:
+                button.clicked.connect(lambda checked, button=button: self.clicked(button.text()))
+
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -120,8 +128,25 @@ class Ui_MainWindow(object):
         self.p8.setText(_translate("MainWindow", "8"))
 
     def clicked(self, text)-> None:
-        self.Answer.setText(str(self.Answer.text) + str(text))
+        currenttext = self.Answer.text()
+        self.Answer.setText(currenttext + str(text))
         self.Answer.adjustSize()
+    
+    def delete_character(self):
+        current_text = self.Answer.text()
+        new_text = current_text[:-1]  # Remove the last character
+        self.Answer.setText(new_text)
+        self.Answer.adjustSize()
+
+    def evaluate_expression(self):
+        expression = self.Answer.text()
+        try:
+            result = str(eval(expression))
+            self.Answer.setText(result)
+        except Exception as e:
+            self.Answer.setText("Error")
+        self.Answer.adjustSize()
+
 
 
 
