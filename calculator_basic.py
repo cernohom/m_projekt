@@ -172,17 +172,28 @@ class Ui_MainWindow(object):
         new_text = current_text[:-1]  # Remove the last character
         self.Answer.setText(new_text)
         self.Answer.adjustSize()
-
     def generate_graph(self):
         equation = self.equation_input.text()
 
         try:
+            # Set the x range symmetrically around zero
             x = np.linspace(-10, 10, 400)
-            y = eval(equation)  # Evaluate the equation using numpy
+            y = eval(equation)
 
             self.graph_axes.clear()
             self.graph_axes.plot(x, y)
             self.graph_axes.set_title('Graph of ' + equation)
+
+            # Center the x-axis and y-axis at zero
+            self.graph_axes.spines['left'].set_position('zero')
+            self.graph_axes.spines['bottom'].set_position('zero')
+            self.graph_axes.spines['right'].set_color('none')
+            self.graph_axes.spines['top'].set_color('none')
+
+            # Set the x and y limits to show both sides of the axes
+            self.graph_axes.set_xlim(-10, 10)
+            self.graph_axes.set_ylim(-10, 10)
+
             self.graph_canvas.draw()
 
         except Exception as e:
