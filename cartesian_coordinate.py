@@ -22,8 +22,8 @@ class MathGraphApp(QMainWindow):
 
     def paintEvent(self, event):
         # Define the drawing area
-        graph_width = 1200
-        graph_height = 600
+        graph_width = 1000
+        graph_height = 1000
         graph_x = 100
         graph_y = 100
 
@@ -36,7 +36,11 @@ class MathGraphApp(QMainWindow):
         path = QPainterPath()
         path2 = QPainterPath()
         path3 = QPainterPath()
+
         #vertical lines
+        pocet_y_car = graph_width/self.velikost_grafu
+        y_oznaceni = np.arange(-pocet_y_car/2, pocet_y_car/2)
+
         for i  in np.arange (0, graph_width + 1, self.velikost_grafu) :
             #start on the cornen of the graph and make line down
             if i == 0:
@@ -47,6 +51,7 @@ class MathGraphApp(QMainWindow):
                 graph_x_pen = graph_x + i
                 path.moveTo(graph_x_pen, graph_y)
                 path.lineTo(graph_x_pen, graph_height + graph_y)
+
         #horizontal lines
         for i  in np.arange (0, graph_height + 1, self.velikost_grafu) :
             if i == 0:
@@ -63,6 +68,7 @@ class MathGraphApp(QMainWindow):
         
         #y and x axes
         pen.setWidth(2)
+        pen.setColor(Qt.darkBlue)
         path2.moveTo(graph_x + graph_width/2, graph_y)
         path2.lineTo(graph_x + graph_width/2, graph_y + graph_height)
         path2.moveTo(graph_x, graph_y + graph_height/2)
@@ -73,20 +79,23 @@ class MathGraphApp(QMainWindow):
         self.scene.addItem(graph_item)
         
         #draw the graph
-        values_amount = graph_width/self.velikost_grafu
-        
         #TODO not manual input of the expression
-        x_values = np.arange(-(values_amount/2), (values_amount/2) + 1, self.velikost_grafu/100)
+        x_values = np.arange(-(graph_width/2), (graph_width/2) + 1, self.velikost_grafu/100)
         y_values = [x ** 2 for x in x_values]
 
         #contruct path for the expression
         for i in range(len(x_values)):
             x = graph_x + (x_values[i] - x_values[0])
-            y = graph_y + (graph_height - y_values[i])
-            if i == 0:
-                path3.moveTo(x, y)
-            else:
-                path3.lineTo(x, y)
+            if (y_values[i] / self.velikost_grafu) > graph_height/2 or (y_values[i] / self.velikost_grafu) < -graph_height/2 and i != 0:
+                path3.moveTo(x, graph_y)
+            elif (y_values[i] / self.velikost_grafu) < -graph_height/2 and i != 0:
+                path3.moveTo(x, graph_y + graph_height)
+            else:    
+                y = graph_y + (graph_height/2 - (y_values[i] / self.velikost_grafu))
+                if i == 0:
+                    path3.moveTo(x, y)
+                else:
+                    path3.lineTo(x, y)
 
         pen.setWidth(2)
         pen.setColor(Qt.red)
