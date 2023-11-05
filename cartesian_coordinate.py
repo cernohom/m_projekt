@@ -1,8 +1,9 @@
 import sys
 import numpy as np
-from PyQt5.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QGraphicsPathItem
+from PyQt5.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QGraphicsPathItem, QGraphicsTextItem
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPen, QPainterPath
+
 
 class MathGraphApp(QMainWindow):
     def __init__(self):
@@ -38,9 +39,6 @@ class MathGraphApp(QMainWindow):
         path3 = QPainterPath()
 
         #vertical lines
-        pocet_y_car = graph_width/self.velikost_grafu
-        y_oznaceni = np.arange(-pocet_y_car/2, pocet_y_car/2)
-
         for i  in np.arange (0, graph_width + 1, self.velikost_grafu) :
             #start on the cornen of the graph and make line down
             if i == 0:
@@ -77,11 +75,24 @@ class MathGraphApp(QMainWindow):
         graph_item = QGraphicsPathItem(path2)
         graph_item.setPen(pen)
         self.scene.addItem(graph_item)
+
+        #oznaceni os
+        for x_poz in range(-(graph_width//2), graph_width//2, self.velikost_grafu):
+            x_label = QGraphicsTextItem(str(x_poz/self.velikost_grafu))
+            x_label.setPos(graph_x + graph_width/2 + x_poz, graph_y + graph_height/2)
+            self.scene.addItem(x_label)
         
+        for y_poz in range(-(graph_height//2), graph_height//2, self.velikost_grafu):
+            if y_poz != 0:
+                y_label = QGraphicsTextItem(str((y_poz/self.velikost_grafu)*-1))
+                y_label.setPos(graph_x + graph_width/2, graph_x + graph_width/2 + y_poz)
+                self.scene.addItem(y_label)
+            
         #draw the graph
         #TODO not manual input of the expression
+        #TODO functional input
         x_values = np.arange(-(graph_width/2), (graph_width/2) + 1, self.velikost_grafu/100)
-        y_values = [x ** 2 for x in x_values]
+        y_values = [x**2 for x in x_values]
 
         #contruct path for the expression
         for i in range(len(x_values)):
