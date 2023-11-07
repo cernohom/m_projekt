@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 import math
-from PyQt5.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QGraphicsPathItem, QGraphicsTextItem
+from PyQt5.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QGraphicsPathItem, QGraphicsTextItem, QPushButton
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPen, QPainterPath
 
@@ -18,19 +18,43 @@ class MathGraphApp(QMainWindow):
         self.scene = QGraphicsScene(self)
         self.view.setScene(self.scene)
         self.velikost_grafu = 50
-        
-        self.setWindowTitle('Math Expression Graph')
-        self.setGeometry(100, 100, 1200,600)
+        self.graph_width = 600
+        self.graph_height = 800
+        self.graph_x = 100
+        self.graph_y = 100
+        self.buttonsize = 50
 
+        self.setWindowTitle('Math Expression Graph')
+        self.setGeometry(100, 100, self.graph_width + 200,self.graph_height + 200)
+
+        self.UiComponents()
+        self.show()
+
+    def UiComponents(self):
+        #Buttons to zoom and unzoom
+        zoom = QPushButton("PyQt button", self)
+        zoom.setText("+")
+        zoom.setGeometry(self.graph_width -self.buttonsize, self.graph_y, self.buttonsize, self.buttonsize)
+        zoom.clicked.connect(self.clicked_plus)
+        
+        unzoom = QPushButton("PyQt button", self)
+        unzoom.setText("-")
+        unzoom.setGeometry(self.graph_width, self.graph_y , self.buttonsize, self.buttonsize)
+        unzoom.clicked.connect(self.clicked_minus)
+        
+    def clicked_plus(self):
+        self.velikost_grafu += 50
+
+    def clicked_minus(self):
+        self.velikost_grafu -= 50
+
+        
+
+        
     def paintEvent(self, event):
         # Define the drawing area
-        graph_width = 2000
-        graph_x_middle = graph_width/2
-        graph_height = 1000
-        graph_y_middle = graph_height/2
-        graph_x = 100
-        graph_y = 100
-
+        self.graph_x_middle = self.graph_width/2
+        self.graph_y_middle = self.graph_height/2
         # Create a pen for drawing the graph
         pen = QPen()
         pen.setColor(Qt.black)
@@ -42,26 +66,26 @@ class MathGraphApp(QMainWindow):
         path3 = QPainterPath()
 
         #vertical lines
-        for i  in np.arange (0, graph_width + 1, self.velikost_grafu) :
+        for i  in np.arange (0, self.graph_width + 1, self.velikost_grafu) :
             #start on the cornen of the graph and make line down
             if i == 0:
-                path.moveTo(graph_x,graph_y)
-                path.lineTo(graph_x, graph_height + graph_y)
+                path.moveTo(self.graph_x,self.graph_y)
+                path.lineTo(self.graph_x, self.graph_height + self.graph_y)
             # move to the top of the graph
             else:
-                graph_x_pen = graph_x + i
-                path.moveTo(graph_x_pen, graph_y)
-                path.lineTo(graph_x_pen, graph_height + graph_y)
+                self.graph_x_pen = self.graph_x + i
+                path.moveTo(self.graph_x_pen, self.graph_y)
+                path.lineTo(self.graph_x_pen, self.graph_height + self.graph_y)
 
         #horizontal lines
-        for i  in np.arange (0, graph_height + 1, self.velikost_grafu) :
+        for i  in np.arange (0, self.graph_height + 1, self.velikost_grafu) :
             if i == 0:
-                path.moveTo(graph_x,graph_y)
-                path.lineTo(graph_width + graph_x, graph_y)
+                path.moveTo(self.graph_x,self.graph_y)
+                path.lineTo(self.graph_width + self.graph_x, self.graph_y)
             else:
-                graph_y_pen = graph_y + i
-                path.moveTo(graph_x, graph_y_pen)
-                path.lineTo(graph_width + graph_x, graph_y_pen)
+                self.graph_y_pen = self.graph_y + i
+                path.moveTo(self.graph_x, self.graph_y_pen)
+                path.lineTo(self.graph_width + self.graph_x, self.graph_y_pen)
         # Create a QGraphicsPathItem to display the graph
         graph_item = QGraphicsPathItem(path)
         graph_item.setPen(pen)
@@ -70,41 +94,41 @@ class MathGraphApp(QMainWindow):
         #y and x axes
         pen.setWidth(2)
         pen.setColor(Qt.darkBlue)
-        path2.moveTo(graph_x + graph_x_middle, graph_y)
-        path2.lineTo(graph_x + graph_x_middle, graph_y + graph_height)
-        path2.moveTo(graph_x, graph_y + graph_y_middle)
-        path2.lineTo(graph_x + graph_width,  graph_y + graph_y_middle)
+        path2.moveTo(self.graph_x + self.graph_x_middle, self.graph_y)
+        path2.lineTo(self.graph_x + self.graph_x_middle, self.graph_y + self.graph_height)
+        path2.moveTo(self.graph_x, self.graph_y + self.graph_y_middle)
+        path2.lineTo(self.graph_x + self.graph_width,  self.graph_y + self.graph_y_middle)
          
         graph_item = QGraphicsPathItem(path2)
         graph_item.setPen(pen)
         self.scene.addItem(graph_item)
 
         #oznaceni os
-        for x_poz in np.arange(-(graph_x_middle), graph_x_middle, self.velikost_grafu):
+        for x_poz in np.arange(-(self.graph_x_middle), self.graph_x_middle, self.velikost_grafu):
             x_label = QGraphicsTextItem(str(x_poz/self.velikost_grafu))
-            x_label.setPos(graph_x + graph_x_middle + x_poz, graph_y + graph_y_middle)
+            x_label.setPos(self.graph_x + self.graph_x_middle + x_poz, self.graph_y + self.graph_y_middle)
             self.scene.addItem(x_label)
         
-        for y_poz in np.arange(-(graph_y_middle), graph_y_middle, self.velikost_grafu):
+        for y_poz in np.arange(-(self.graph_y_middle), self.graph_y_middle, self.velikost_grafu):
             if y_poz != 0:
                 y_label = QGraphicsTextItem(str((y_poz/self.velikost_grafu)*-1))
-                y_label.setPos(graph_x + graph_x_middle, graph_y + graph_y_middle + y_poz)
+                y_label.setPos(self.graph_x + self.graph_x_middle, self.graph_y + self.graph_y_middle + y_poz)
                 self.scene.addItem(y_label)
             
         #draw the graph
         #TODO not manual input of the expression
-        x_values = np.arange(-(graph_x_middle)/self.velikost_grafu, (graph_x_middle)/self.velikost_grafu, 1/1000)
+        x_values = np.arange(-(self.graph_x_middle)/self.velikost_grafu, (self.graph_x_middle)/self.velikost_grafu, 1/1000)
         y_values = [math.sin(x) for x in x_values]
 
         #contruct path for the expression
         for i in range(len(x_values)):
-            x = graph_x + graph_x_middle + (x_values[i]*self.velikost_grafu)
-            if (y_values[i] * self.velikost_grafu) > graph_y_middle and i != 0:
-                path3.moveTo(x, graph_y)
-            elif (y_values[i] * self.velikost_grafu) < -graph_y_middle and i != 0:
-                path3.moveTo(x, graph_y + graph_height)
+            x = self.graph_x + self.graph_x_middle + (x_values[i]*self.velikost_grafu)
+            if (y_values[i] * self.velikost_grafu) > self.graph_y_middle and i != 0:
+                path3.moveTo(x, self.graph_y)
+            elif (y_values[i] * self.velikost_grafu) < -self.graph_y_middle and i != 0:
+                path3.moveTo(x, self.graph_y + self.graph_height)
             else:    
-                y = graph_y + (graph_y_middle - (y_values[i] * self.velikost_grafu))
+                y = self.graph_y + (self.graph_y_middle - (y_values[i] * self.velikost_grafu))
                 if i == 0:
                     path3.moveTo(x, y)
                 else:
