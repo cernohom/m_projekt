@@ -3,8 +3,7 @@ import numpy as np
 import math
 from PyQt5.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QGraphicsPathItem, QGraphicsTextItem, QPushButton
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPen, QPainterPath
-
+from PyQt5.QtGui import QPen, QPainterPath, QBrush, QColor
 
 class MathGraphApp(QMainWindow):
     def __init__(self):
@@ -23,6 +22,7 @@ class MathGraphApp(QMainWindow):
         self.graph_x = 100
         self.graph_y = 100
         self.buttonsize = 50
+        self.zoom_size = 50
 
         self.setWindowTitle('Math Expression Graph')
         self.setGeometry(100, 100, self.graph_width + 200,self.graph_height + 200)
@@ -44,10 +44,17 @@ class MathGraphApp(QMainWindow):
         
     def clicked_plus(self):
         self.velikost_grafu += 50
+        ex = MathGraphApp()
+        ex.show()
 
     def clicked_minus(self):
-        self.velikost_grafu -= 50
-
+        if self.velikost_grafu - self.zoom_size > 0:
+            self.velikost_grafu -= self.zoom_size
+            ex = MathGraphApp()
+            ex.show()
+        else:
+            self.zoom_size = self.zoom_size/10
+            pass
         
 
         
@@ -57,15 +64,24 @@ class MathGraphApp(QMainWindow):
         self.graph_y_middle = self.graph_height/2
         # Create a pen for drawing the graph
         pen = QPen()
-        pen.setColor(Qt.black)
-        pen.setWidth(1)
+        pen.setColor(Qt.red)
+        pen.setWidth(2)
 
         # Create a QPainterPath to represent the graph
         path = QPainterPath()
         path2 = QPainterPath()
         path3 = QPainterPath()
+        path4 = QPainterPath()
 
+        #background
+        path4.addRect(self.graph_x, self.graph_y, self.graph_width, self.graph_height)
+        graph_item = QGraphicsPathItem(path4)
+        graph_item.setPen(pen)
+        graph_item.setBrush(QBrush(QColor(Qt.white)))
+        self.scene.addItem(graph_item)
         #vertical lines
+        pen.setColor(Qt.black)
+        pen.setWidth(1)
         for i  in np.arange (0, self.graph_width + 1, self.velikost_grafu) :
             #start on the cornen of the graph and make line down
             if i == 0:
