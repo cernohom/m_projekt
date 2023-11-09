@@ -32,6 +32,7 @@ class MathGraphApp(QMainWindow):
 
     def UiComponents(self):
         #Buttons to zoom and unzoom
+        self.times_zoom = 0
         zoom = QPushButton("PyQt button", self)
         zoom.setText("+")
         zoom.setGeometry(self.graph_width -self.buttonsize, self.graph_y, self.buttonsize, self.buttonsize)
@@ -43,7 +44,8 @@ class MathGraphApp(QMainWindow):
         unzoom.clicked.connect(self.clicked_minus)
         
     def clicked_plus(self):
-        self.velikost_grafu += 50
+        self.zoom_size
+        self.velikost_grafu += self.zoom_size
         ex = MathGraphApp()
         ex.show()
 
@@ -53,7 +55,7 @@ class MathGraphApp(QMainWindow):
             ex = MathGraphApp()
             ex.show()
         else:
-            self.zoom_size = self.zoom_size/10
+            self.zoom_size = self.zoom_size - 10
             pass
         
 
@@ -82,8 +84,12 @@ class MathGraphApp(QMainWindow):
         #vertical lines
         pen.setColor(Qt.black)
         pen.setWidth(1)
-        for i  in np.arange (0, self.graph_width + 1, self.velikost_grafu) :
-            #start on the cornen of the graph and make line down
+        #on the right from y axis
+        for i  in np.arange (self.graph_x_middle, self.graph_width + 1, 50) :
+            x_label = QGraphicsTextItem(str((i - self.graph_x_middle) / self.velikost_grafu))
+            x_label.setPos(self.graph_x + i, self.graph_y + self.graph_y_middle)
+            self.scene.addItem(x_label)
+            #start in the middle of the graph and make line down
             if i == 0:
                 path.moveTo(self.graph_x,self.graph_y)
                 path.lineTo(self.graph_x, self.graph_height + self.graph_y)
@@ -92,9 +98,27 @@ class MathGraphApp(QMainWindow):
                 self.graph_x_pen = self.graph_x + i
                 path.moveTo(self.graph_x_pen, self.graph_y)
                 path.lineTo(self.graph_x_pen, self.graph_height + self.graph_y)
+        
+        #on the left from y axis
+        for i  in reversed(np.arange (self.graph_x - 50, self.graph_x_middle, 50)) :
+            x_label = QGraphicsTextItem(str((i - self.graph_x_middle) / self.velikost_grafu))
+            x_label.setPos(self.graph_x + i, self.graph_y + self.graph_y_middle)
+            self.scene.addItem(x_label)
+            #start in the middle of the graph and make line down
+            if i == 0:
+                path.moveTo(self.graph_x,self.graph_y)
+                path.lineTo(self.graph_x, self.graph_height + self.graph_y)
+            # move to the top of the graph
+            else:
+                self.graph_x_pen = self.graph_x + i
+                path.moveTo(self.graph_x_pen, self.graph_y)
+                path.lineTo(self.graph_x_pen, self.graph_height + self.graph_y)    
 
         #horizontal lines
-        for i  in np.arange (0, self.graph_height + 1, self.velikost_grafu) :
+        for i  in np.arange (self.graph_y_middle + self.graph_y - 50, self.graph_height + 1, 50) :
+            y_label = QGraphicsTextItem(str(((i - self.graph_y_middle) / self.velikost_grafu) * - 1))
+            y_label.setPos(self.graph_x + self.graph_x_middle, self.graph_y + i)
+            self.scene.addItem(y_label)
             if i == 0:
                 path.moveTo(self.graph_x,self.graph_y)
                 path.lineTo(self.graph_width + self.graph_x, self.graph_y)
@@ -102,6 +126,19 @@ class MathGraphApp(QMainWindow):
                 self.graph_y_pen = self.graph_y + i
                 path.moveTo(self.graph_x, self.graph_y_pen)
                 path.lineTo(self.graph_width + self.graph_x, self.graph_y_pen)
+
+        for i  in reversed(np.arange (self.graph_y - 50, self.graph_y_middle, 50)) :
+            y_label = QGraphicsTextItem(str(((i - self.graph_y_middle) / self.velikost_grafu) * - 1))
+            y_label.setPos(self.graph_x + self.graph_x_middle, self.graph_y + i)
+            self.scene.addItem(y_label)
+            if i == 0:
+                path.moveTo(self.graph_x,self.graph_y)
+                path.lineTo(self.graph_width + self.graph_x, self.graph_y)
+            else:
+                self.graph_y_pen = self.graph_y + i
+                path.moveTo(self.graph_x, self.graph_y_pen)
+                path.lineTo(self.graph_width + self.graph_x, self.graph_y_pen)
+        
         # Create a QGraphicsPathItem to display the graph
         graph_item = QGraphicsPathItem(path)
         graph_item.setPen(pen)
@@ -118,18 +155,6 @@ class MathGraphApp(QMainWindow):
         graph_item = QGraphicsPathItem(path2)
         graph_item.setPen(pen)
         self.scene.addItem(graph_item)
-
-        #oznaceni os
-        for x_poz in np.arange(-(self.graph_x_middle), self.graph_x_middle, self.velikost_grafu):
-            x_label = QGraphicsTextItem(str(x_poz/self.velikost_grafu))
-            x_label.setPos(self.graph_x + self.graph_x_middle + x_poz, self.graph_y + self.graph_y_middle)
-            self.scene.addItem(x_label)
-        
-        for y_poz in np.arange(-(self.graph_y_middle), self.graph_y_middle, self.velikost_grafu):
-            if y_poz != 0:
-                y_label = QGraphicsTextItem(str((y_poz/self.velikost_grafu)*-1))
-                y_label.setPos(self.graph_x + self.graph_x_middle, self.graph_y + self.graph_y_middle + y_poz)
-                self.scene.addItem(y_label)
             
         #draw the graph
         #TODO not manual input of the expression
