@@ -16,6 +16,8 @@ class MathGraphApp(QMainWindow):
         self.view.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self.scene = QGraphicsScene(self)
         self.view.setScene(self.scene)
+
+        #hodnoty pro graf
         self.velikost_grafu = 50
         self.graph_width = 600
         self.graph_height = 800
@@ -31,39 +33,44 @@ class MathGraphApp(QMainWindow):
         self.show()
 
     def UiComponents(self):
-        #Buttons to zoom and unzoom
-        self.times_zoom = 0
+        #zoom button
         zoom = QPushButton("PyQt button", self)
         zoom.setText("+")
-        zoom.setGeometry(self.graph_width -self.buttonsize, self.graph_y, self.buttonsize, self.buttonsize)
+        zoom.setGeometry(self.graph_width + self.graph_x - self.buttonsize, self.graph_y, self.buttonsize, self.buttonsize)
         zoom.clicked.connect(self.clicked_plus)
         
+        #unzoom button
         unzoom = QPushButton("PyQt button", self)
         unzoom.setText("-")
-        unzoom.setGeometry(self.graph_width, self.graph_y , self.buttonsize, self.buttonsize)
+        unzoom.setGeometry(self.graph_width + self.graph_x, self.graph_y , self.buttonsize, self.buttonsize)
         unzoom.clicked.connect(self.clicked_minus)
         
+    #what happens after i click plus
     def clicked_plus(self):
-        self.zoom_size
-        self.velikost_grafu += self.zoom_size
-        ex = MathGraphApp()
-        ex.show()
+        if self.zoom_size < 300 :
+            self.velikost_grafu += self.zoom_size
+        else:
+            self.velikost_grafu/10
+        MathGraphApp()
 
+    #what happens after i click minus
     def clicked_minus(self):
         if self.velikost_grafu - self.zoom_size > 0:
             self.velikost_grafu -= self.zoom_size
-            ex = MathGraphApp()
-            ex.show()
-        else:
-            self.zoom_size = self.zoom_size - 10
+            round(self.velikost_grafu,1)
+        #too small numbers too hard for comp
+        elif self.velikost_grafu > 0.1:
+            self.velikost_grafu = self.velikost_grafu / 10
+        else:    
             pass
-        
+        MathGraphApp()
 
         
     def paintEvent(self, event):
-        # Define the drawing area
+        #additional values to not calculate everytime
         self.graph_x_middle = self.graph_width/2
         self.graph_y_middle = self.graph_height/2
+
         # Create a pen for drawing the graph
         pen = QPen()
         pen.setColor(Qt.red)
@@ -81,12 +88,14 @@ class MathGraphApp(QMainWindow):
         graph_item.setPen(pen)
         graph_item.setBrush(QBrush(QColor(Qt.white)))
         self.scene.addItem(graph_item)
-        #vertical lines
+
+        #vertical lines + labels
         pen.setColor(Qt.black)
         pen.setWidth(1)
+
         #on the right from y axis
-        for i  in np.arange (self.graph_x_middle, self.graph_width + 1, 50) :
-            x_label = QGraphicsTextItem(str((i - self.graph_x_middle) / self.velikost_grafu))
+        for i  in np.arange (self.graph_x_middle, self.graph_width, 50) :
+            x_label = QGraphicsTextItem(str (round ((i - self.graph_x_middle) / self.velikost_grafu, 1)))
             x_label.setPos(self.graph_x + i, self.graph_y + self.graph_y_middle)
             self.scene.addItem(x_label)
             #start in the middle of the graph and make line down
@@ -101,7 +110,7 @@ class MathGraphApp(QMainWindow):
         
         #on the left from y axis
         for i  in reversed(np.arange (self.graph_x - 50, self.graph_x_middle, 50)) :
-            x_label = QGraphicsTextItem(str((i - self.graph_x_middle) / self.velikost_grafu))
+            x_label = QGraphicsTextItem(str (round ((i - self.graph_x_middle) / self.velikost_grafu, 1)))
             x_label.setPos(self.graph_x + i, self.graph_y + self.graph_y_middle)
             self.scene.addItem(x_label)
             #start in the middle of the graph and make line down
@@ -115,8 +124,8 @@ class MathGraphApp(QMainWindow):
                 path.lineTo(self.graph_x_pen, self.graph_height + self.graph_y)    
 
         #horizontal lines
-        for i  in np.arange (self.graph_y_middle + self.graph_y - 50, self.graph_height + 1, 50) :
-            y_label = QGraphicsTextItem(str(((i - self.graph_y_middle) / self.velikost_grafu) * - 1))
+        for i  in np.arange (self.graph_y_middle + self.graph_y - 50, self.graph_height, 50) :
+            y_label = QGraphicsTextItem(str (round (((i - self.graph_y_middle) / self.velikost_grafu) * - 1, 1)))
             y_label.setPos(self.graph_x + self.graph_x_middle, self.graph_y + i)
             self.scene.addItem(y_label)
             if i == 0:
@@ -128,7 +137,7 @@ class MathGraphApp(QMainWindow):
                 path.lineTo(self.graph_width + self.graph_x, self.graph_y_pen)
 
         for i  in reversed(np.arange (self.graph_y - 50, self.graph_y_middle, 50)) :
-            y_label = QGraphicsTextItem(str(((i - self.graph_y_middle) / self.velikost_grafu) * - 1))
+            y_label = QGraphicsTextItem(str (round (((i - self.graph_y_middle) / self.velikost_grafu) * - 1, 1)))
             y_label.setPos(self.graph_x + self.graph_x_middle, self.graph_y + i)
             self.scene.addItem(y_label)
             if i == 0:
@@ -158,8 +167,8 @@ class MathGraphApp(QMainWindow):
             
         #draw the graph
         #TODO not manual input of the expression
-        x_values = np.arange(-(self.graph_x_middle)/self.velikost_grafu, (self.graph_x_middle)/self.velikost_grafu, 1/1000)
-        y_values = [math.sin(x) for x in x_values]
+        x_values = np.arange(-(self.graph_x_middle)/self.velikost_grafu, (self.graph_x_middle)/self.velikost_grafu, 1/10)
+        y_values = [x ** 2 for x in x_values]
 
         #contruct path for the expression
         for i in range(len(x_values)):
