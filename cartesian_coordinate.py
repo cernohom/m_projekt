@@ -51,7 +51,7 @@ class MathGraphApp(QMainWindow):
             self.velikost_grafu += self.zoom_size
         else:
             self.velikost_grafu/10
-        MathGraphApp()
+        self.view.repaint
 
     #what happens after i click minus
     def clicked_minus(self):
