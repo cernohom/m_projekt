@@ -1,9 +1,13 @@
 import sys
+import typing
+from PyQt5 import QtGui
 import numpy as np
 import math
 from PyQt5.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QGraphicsPathItem, QGraphicsTextItem, QPushButton
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPen, QPainterPath, QBrush, QColor
+
+pomocna = 0
 
 class MathGraphApp(QMainWindow):
     def __init__(self):
@@ -14,180 +18,212 @@ class MathGraphApp(QMainWindow):
         self.view = QGraphicsView(self)
         self.setCentralWidget(self.view)
         self.view.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        
+        
         self.scene = QGraphicsScene(self)
         self.view.setScene(self.scene)
 
-        #hodnoty pro graf
-        self.velikost_grafu = 50
-        self.graph_width = 600
-        self.graph_height = 800
-        self.graph_x = 100
-        self.graph_y = 100
-        self.buttonsize = 50
-        self.zoom_size = 50
+        # Hodnoty pro graf
+        self.pole_grafu = 50
+        self.sirka_grafu = 600
+        self.vyska_grafu = 800
+        self.kraj_x = 100
+        self.kraj_y = 100
+        self.velikost_tlacitka = 50
+        self.sila_priblizeni = 50
 
-        self.setWindowTitle('Math Expression Graph')
-        self.setGeometry(100, 100, self.graph_width + 200,self.graph_height + 200)
-
+        self.setWindowTitle('Grafická kalkulačka')
+        self.setGeometry(100, 100, self.sirka_grafu + 200,self.vyska_grafu + 200)
+        
         self.UiComponents()
         self.show()
 
     def UiComponents(self):
-        #zoom button
-        zoom = QPushButton("PyQt button", self)
-        zoom.setText("+")
-        zoom.setGeometry(self.graph_width + self.graph_x - self.buttonsize, self.graph_y, self.buttonsize, self.buttonsize)
-        zoom.clicked.connect(self.clicked_plus)
-        
-        #unzoom button
-        unzoom = QPushButton("PyQt button", self)
-        unzoom.setText("-")
-        unzoom.setGeometry(self.graph_width + self.graph_x, self.graph_y , self.buttonsize, self.buttonsize)
-        unzoom.clicked.connect(self.clicked_minus)
-        
-    #what happens after i click plus
-    def clicked_plus(self):
-        if self.zoom_size < 300 :
-            self.velikost_grafu += self.zoom_size
-        else:
-            self.velikost_grafu/10
-        self.view.repaint
 
-    #what happens after i click minus
-    def clicked_minus(self):
-        if self.velikost_grafu - self.zoom_size > 0:
-            self.velikost_grafu -= self.zoom_size
-            round(self.velikost_grafu,1)
-        #too small numbers too hard for comp
-        elif self.velikost_grafu > 0.1:
-            self.velikost_grafu = self.velikost_grafu / 10
-        else:    
-            pass
-        MathGraphApp()
-
+        # Tlacitko na priblizeni
+        priblizeni = QPushButton("PyQt button", self)
+        priblizeni.setText("+")
+        priblizeni.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y, self.velikost_tlacitka, self.velikost_tlacitka)
+        priblizeni.clicked.connect(self.priblizeni) #Co se stane kdyz zmacknu tlacitko
         
+        # Tlacitko na oddaleni
+        oddaleni = QPushButton("PyQt button", self)
+        oddaleni.setText("-")
+        oddaleni.setGeometry(self.sirka_grafu + self.kraj_x, self.kraj_y , self.velikost_tlacitka, self.velikost_tlacitka)
+        oddaleni.clicked.connect(self.oddaleni) # Co se stane kdyz zmacknu tlacitko
+        
+    # Co se stane kdyz zmacknu priblizeni
+    def priblizeni(self):
+        self.pole_grafu = self.pole_grafu * 2
+        self.view.repaint()
+
+    # Co se stane kdyz zmacknu priblizeni
+    def oddaleni(self):
+        self.pole_grafu = self.pole_grafu / 2
+        self.view.repaint()
+
     def paintEvent(self, event):
-        #additional values to not calculate everytime
-        self.graph_x_middle = self.graph_width/2
-        self.graph_y_middle = self.graph_height/2
 
-        # Create a pen for drawing the graph
-        pen = QPen()
-        pen.setColor(Qt.red)
-        pen.setWidth(2)
+        # vypocitani hodnot aby se nepocitaly pokazde
+        self.stred_grafu_x = self.sirka_grafu/2 #prostredek grafu na ose x
+        self.stred_grafu_y = self.vyska_grafu/2 #prostredek grafu na ose y
 
-        # Create a QPainterPath to represent the graph
-        path = QPainterPath()
-        path2 = QPainterPath()
-        path3 = QPainterPath()
-        path4 = QPainterPath()
+        # Vytvoreni pera
+        pero = QPen()
+        pero.setColor(Qt.red)
+        pero.setWidth(2)
 
-        #background
-        path4.addRect(self.graph_x, self.graph_y, self.graph_width, self.graph_height)
-        graph_item = QGraphicsPathItem(path4)
-        graph_item.setPen(pen)
+        # Vytvareni tras protoze jsou ctyri ruzne barvy
+        trasa1 = QPainterPath()
+        trasa2 = QPainterPath()
+        trasa3 = QPainterPath()
+        trasa4 = QPainterPath()
+
+        # Pozadi pro graf aby prekrylo to predchozi
+        trasa4.addRect(self.kraj_x, self.kraj_y, self.sirka_grafu, self.vyska_grafu)
+        graph_item = QGraphicsPathItem(trasa4)
+        graph_item.setPen(pero)
         graph_item.setBrush(QBrush(QColor(Qt.white)))
         self.scene.addItem(graph_item)
 
-        #vertical lines + labels
-        pen.setColor(Qt.black)
-        pen.setWidth(1)
+        # Nastaveni pera pro vykresleni kartezske soustavy
+        pero.setColor(Qt.black)
+        pero.setWidth(1)
 
-        #on the right from y axis
-        for i  in np.arange (self.graph_x_middle, self.graph_width, 50) :
-            x_label = QGraphicsTextItem(str (round ((i - self.graph_x_middle) / self.velikost_grafu, 1)))
-            x_label.setPos(self.graph_x + i, self.graph_y + self.graph_y_middle)
-            self.scene.addItem(x_label)
-            #start in the middle of the graph and make line down
-            if i == 0:
-                path.moveTo(self.graph_x,self.graph_y)
-                path.lineTo(self.graph_x, self.graph_height + self.graph_y)
-            # move to the top of the graph
-            else:
-                self.graph_x_pen = self.graph_x + i
-                path.moveTo(self.graph_x_pen, self.graph_y)
-                path.lineTo(self.graph_x_pen, self.graph_height + self.graph_y)
+        # Vytvoreni hodnot na ose x a samotnych vertikalnich os do prvni pulky
+        for i  in np.arange (self.stred_grafu_x, self.sirka_grafu, 50) :
+            x_label_text = (i - self.stred_grafu_x) / self.pole_grafu # Co bude na danem popisku
+            self.pozice_pera_x = self.kraj_x + i #Pozice pera na ose x
         
-        #on the left from y axis
-        for i  in reversed(np.arange (self.graph_x - 50, self.graph_x_middle, 50)) :
-            x_label = QGraphicsTextItem(str (round ((i - self.graph_x_middle) / self.velikost_grafu, 1)))
-            x_label.setPos(self.graph_x + i, self.graph_y + self.graph_y_middle)
+            if -1 < x_label_text < 1: # Pokud je cislo mensi nez 1 zvetsim pocet cisel za desetinou carkou
+                pocet_zaokrouhlenych_mist = 3
+            else: # Jinak pouze jedno cislo za desetinou carkou
+                pocet_zaokrouhlenych_mist = 1
+            
+            x_label = QGraphicsTextItem(str(round(x_label_text, pocet_zaokrouhlenych_mist))) # Zaokrouhleni a nasledne vytvoreni popisku osy
+            x_label.setPos(self.pozice_pera_x, self.kraj_y + self.stred_grafu_y)
             self.scene.addItem(x_label)
-            #start in the middle of the graph and make line down
-            if i == 0:
-                path.moveTo(self.graph_x,self.graph_y)
-                path.lineTo(self.graph_x, self.graph_height + self.graph_y)
-            # move to the top of the graph
-            else:
-                self.graph_x_pen = self.graph_x + i
-                path.moveTo(self.graph_x_pen, self.graph_y)
-                path.lineTo(self.graph_x_pen, self.graph_height + self.graph_y)    
 
-        #horizontal lines
-        for i  in np.arange (self.graph_y_middle + self.graph_y - 50, self.graph_height, 50) :
-            y_label = QGraphicsTextItem(str (round (((i - self.graph_y_middle) / self.velikost_grafu) * - 1, 1)))
-            y_label.setPos(self.graph_x + self.graph_x_middle, self.graph_y + i)
+            # Prvni caru zacni v levem hornim rohu a udelej caru dolu
+            if i == 0:
+                trasa1.moveTo(self.kraj_x,self.kraj_y)
+                trasa1.lineTo(self.kraj_x, self.vyska_grafu + self.kraj_y)
+            
+            # Presun nahoru posun o jedno policko a udelej caru dolu
+            else:
+                trasa1.moveTo(self.pozice_pera_x, self.kraj_y)
+                trasa1.lineTo(self.pozice_pera_x, self.vyska_grafu + self.kraj_y)
+        
+        pocet_zaokrouhlenych_mist = 1
+
+        # Vytvoreni hodnot na ose y a samotnych vertikalnich os
+        for i  in reversed(np.arange (self.kraj_x - 50, self.stred_grafu_x, 50)) : # serazena cisla od  
+            x_label_text = (i - self.stred_grafu_x) / self.pole_grafu
+            if -1 < x_label_text < 1:
+                pocet_zaokrouhlenych_mist = 3
+            else:
+                pocet_zaokrouhlenych_mist = 1   
+            x_label = QGraphicsTextItem(str (round (x_label_text, pocet_zaokrouhlenych_mist)))
+            x_label.setPos(self.kraj_x + i, self.kraj_y + self.stred_grafu_y)
+            self.scene.addItem(x_label)
+            # Zacni ve stredu a udelej caru dolu
+            if i == 0:
+                trasa1.moveTo(self.kraj_x,self.kraj_y)
+                trasa1.lineTo(self.kraj_x, self.vyska_grafu + self.kraj_y)
+            # Presun nahoru do noveho pole a udelej caru dolu
+            else:
+                self.graph_x_pen = self.kraj_x + i
+                trasa1.moveTo(self.graph_x_pen, self.kraj_y)
+                trasa1.lineTo(self.graph_x_pen, self.vyska_grafu + self.kraj_y)    
+
+        # Horizontalni cary
+        for i  in np.arange (self.stred_grafu_y + self.kraj_y - 50, self.vyska_grafu, 50) :
+            y_label_text = (((i - self.stred_grafu_y) / self.pole_grafu) * - 1)
+            if -1 < y_label_text < 1:
+                round(y_label_text, 3)
+            else:
+                round(y_label_text, 1)
+            y_label = QGraphicsTextItem(str(y_label_text))
+            y_label.setPos(self.kraj_x + self.stred_grafu_x, self.kraj_y + i)
             self.scene.addItem(y_label)
             if i == 0:
-                path.moveTo(self.graph_x,self.graph_y)
-                path.lineTo(self.graph_width + self.graph_x, self.graph_y)
+                trasa1.moveTo(self.kraj_x,self.kraj_y)
+                trasa1.lineTo(self.sirka_grafu + self.kraj_x, self.kraj_y)
             else:
-                self.graph_y_pen = self.graph_y + i
-                path.moveTo(self.graph_x, self.graph_y_pen)
-                path.lineTo(self.graph_width + self.graph_x, self.graph_y_pen)
+                self.graph_y_pen = self.kraj_y + i
+                trasa1.moveTo(self.kraj_x, self.graph_y_pen)
+                trasa1.lineTo(self.sirka_grafu + self.kraj_x, self.graph_y_pen)
 
-        for i  in reversed(np.arange (self.graph_y - 50, self.graph_y_middle, 50)) :
-            y_label = QGraphicsTextItem(str (round (((i - self.graph_y_middle) / self.velikost_grafu) * - 1, 1)))
-            y_label.setPos(self.graph_x + self.graph_x_middle, self.graph_y + i)
+        for i  in reversed(np.arange (self.kraj_y - 50, self.stred_grafu_y, 50)) :
+            y_label_text = (i - self.stred_grafu_y) / self.pole_grafu * - 1
+            if -1 < y_label_text < 1:
+                round(y_label_text, 3)
+            else:
+                round(y_label_text, 1)
+            y_label = QGraphicsTextItem(str (round (y_label_text, pocet_zaokrouhlenych_mist)))
+            y_label.setPos(self.kraj_x + self.stred_grafu_x, self.kraj_y + i)
             self.scene.addItem(y_label)
             if i == 0:
-                path.moveTo(self.graph_x,self.graph_y)
-                path.lineTo(self.graph_width + self.graph_x, self.graph_y)
+                trasa1.moveTo(self.kraj_x,self.kraj_y)
+                trasa1.lineTo(self.sirka_grafu + self.kraj_x, self.kraj_y)
             else:
-                self.graph_y_pen = self.graph_y + i
-                path.moveTo(self.graph_x, self.graph_y_pen)
-                path.lineTo(self.graph_width + self.graph_x, self.graph_y_pen)
+                self.graph_y_pen = self.kraj_y + i
+                trasa1.moveTo(self.kraj_x, self.graph_y_pen)
+                trasa1.lineTo(self.sirka_grafu + self.kraj_x, self.graph_y_pen)
         
         # Create a QGraphicsPathItem to display the graph
-        graph_item = QGraphicsPathItem(path)
-        graph_item.setPen(pen)
+        graph_item = QGraphicsPathItem(trasa1)
+        graph_item.setPen(pero)
         self.scene.addItem(graph_item)
         
         #y and x axes
-        pen.setWidth(2)
-        pen.setColor(Qt.darkBlue)
-        path2.moveTo(self.graph_x + self.graph_x_middle, self.graph_y)
-        path2.lineTo(self.graph_x + self.graph_x_middle, self.graph_y + self.graph_height)
-        path2.moveTo(self.graph_x, self.graph_y + self.graph_y_middle)
-        path2.lineTo(self.graph_x + self.graph_width,  self.graph_y + self.graph_y_middle)
+        pero.setWidth(2)
+        pero.setColor(Qt.darkBlue)
+        trasa2.moveTo(self.kraj_x + self.stred_grafu_x, self.kraj_y)
+        trasa2.lineTo(self.kraj_x + self.stred_grafu_x, self.kraj_y + self.vyska_grafu)
+        trasa2.moveTo(self.kraj_x, self.kraj_y + self.stred_grafu_y)
+        trasa2.lineTo(self.kraj_x + self.sirka_grafu,  self.kraj_y + self.stred_grafu_y)
          
-        graph_item = QGraphicsPathItem(path2)
-        graph_item.setPen(pen)
+        graph_item = QGraphicsPathItem(trasa2)
+        graph_item.setPen(pero)
         self.scene.addItem(graph_item)
             
         #draw the graph
         #TODO not manual input of the expression
-        x_values = np.arange(-(self.graph_x_middle)/self.velikost_grafu, (self.graph_x_middle)/self.velikost_grafu, 1/10)
-        y_values = [x ** 2 for x in x_values]
+        x_values = np.arange(-(self.stred_grafu_x)/self.pole_grafu, (self.stred_grafu_x)/self.pole_grafu, 1/100)
+        #pridavani posledniho cisla nefunguje
+        last_x = self.stred_grafu_x/self.pole_grafu
+        np.append(x_values, last_x)
+        print(x_values)
+        y_values = [math.tan(x) for x in x_values]
+        #pridani posledniho cisla nefunguje
+        y_values.append(math.tan(last_x))
 
-        #contruct path for the expression
+        #vytvor path pro vyraz
         for i in range(len(x_values)):
-            x = self.graph_x + self.graph_x_middle + (x_values[i]*self.velikost_grafu)
-            if (y_values[i] * self.velikost_grafu) > self.graph_y_middle and i != 0:
-                path3.moveTo(x, self.graph_y)
-            elif (y_values[i] * self.velikost_grafu) < -self.graph_y_middle and i != 0:
-                path3.moveTo(x, self.graph_y + self.graph_height)
-            else:    
-                y = self.graph_y + (self.graph_y_middle - (y_values[i] * self.velikost_grafu))
-                if i == 0:
-                    path3.moveTo(x, y)
+            x = self.kraj_x + self.stred_grafu_x + (x_values[i]*self.pole_grafu) # vzdalenost od kraje + pulka grafu jelikoz hodnoty jsou od - do plusu ale tady pracuji jen v plusu + hodnota
+            if (y_values[i] * self.pole_grafu) > self.stred_grafu_y and i != 0: # pokud je hodnota y vetsi nez vyska grafu a neni to prvni cislo tak cara na kraj grafu nahoru a posun pero na hodnotu x a na kraj grafu nahore
+                trasa3.lineTo(x, self.kraj_y)
+                trasa3.moveTo(x, self.kraj_y)
+            elif (y_values[i] * self.pole_grafu) < -self.stred_grafu_y and i != 0: # pokud je mensi na x a kraj grafu dole posun na x a na graf dole
+                trasa3.moveTo(x, self.kraj_y + self.vyska_grafu)
+            else:       
+                y = self.kraj_y + self.stred_grafu_y - (y_values[i] * self.pole_grafu) # vytvor y od kraje grafu pulka + pul
+                if i == 0: #pokud prvni posun na xy pozici
+                    trasa3.moveTo(x, y)
                 else:
-                    path3.lineTo(x, y)
+                    trasa3.lineTo(x, y) #pokud dalsi caru na aktualni xy pozici
+        global pomocna
+        if pomocna == 0:
+            self.resize(self.sirka_grafu+200,self.vyska_grafu+100)
+            pomocna += 1
+        
 
-        pen.setWidth(2)
-        pen.setColor(Qt.red)
-        graph_item = QGraphicsPathItem(path3)
-        graph_item.setPen(pen)
+
+        pero.setWidth(2)
+        pero.setColor(Qt.red)
+        graph_item = QGraphicsPathItem(trasa3)
+        graph_item.setPen(pero)
         self.scene.addItem(graph_item)
 
 
