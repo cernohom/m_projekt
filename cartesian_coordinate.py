@@ -2,8 +2,9 @@ import sys
 import typing
 from PyQt5 import QtGui
 import numpy as np
+import sympy as sp
 import math
-from PyQt5.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QGraphicsPathItem, QGraphicsTextItem, QPushButton
+from PyQt5.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QGraphicsPathItem, QGraphicsTextItem, QPushButton, QLineEdit
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPen, QPainterPath, QBrush, QColor
 
@@ -32,6 +33,11 @@ class MathGraphApp(QMainWindow):
         self.velikost_tlacitka = 50
         self.sila_priblizeni = 50
 
+        # vypocitani hodnot aby se nepocitaly pokazde
+        self.stred_grafu_x = self.sirka_grafu/2 #prostredek grafu na ose x
+        self.stred_grafu_y = self.vyska_grafu/2 #prostredek grafu na ose y
+
+
         self.setWindowTitle('Grafická kalkulačka')
         self.setGeometry(100, 100, self.sirka_grafu + 200,self.vyska_grafu + 200)
         
@@ -45,13 +51,21 @@ class MathGraphApp(QMainWindow):
         priblizeni.setText("+")
         priblizeni.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y, self.velikost_tlacitka, self.velikost_tlacitka)
         priblizeni.clicked.connect(self.priblizeni) #Co se stane kdyz zmacknu tlacitko
+        priblizeni.clicked.connect(self.nakresliKrivkuGrafu)
         
+        textove_pole_funkce = QLineEdit(self)
+        textove_pole_funkce.setGeometry(self.sirka_grafu + self.kraj_x - 150, self.kraj_y + 100, 140, 30)
+        # Tlacitko na priblizeni
+        potvrzeni = QPushButton("PyQt button", self)
+        potvrzeni.setText("potvrzeni")
+        potvrzeni.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + 300, self.velikost_tlacitka, self.velikost_tlacitka)
+        potvrzeni.clicked.connect(self.nakresliKrivkuGrafu) #Co se stane kdyz zmacknu tlacitko
         # Tlacitko na oddaleni
         oddaleni = QPushButton("PyQt button", self)
         oddaleni.setText("-")
         oddaleni.setGeometry(self.sirka_grafu + self.kraj_x, self.kraj_y , self.velikost_tlacitka, self.velikost_tlacitka)
         oddaleni.clicked.connect(self.oddaleni) # Co se stane kdyz zmacknu tlacitko
-        
+        oddaleni.clicked.connect(self.nakresliKrivkuGrafu)
     # Co se stane kdyz zmacknu priblizeni
     def priblizeni(self):
         self.pole_grafu = self.pole_grafu * 2
@@ -61,12 +75,50 @@ class MathGraphApp(QMainWindow):
     def oddaleni(self):
         self.pole_grafu = self.pole_grafu / 2
         self.view.repaint()
+    
+    def nakresliKrivkuGrafu(self):            
+        pero = QPen()
+        trasa = QPainterPath()
+
+        pero.setWidth(2)
+        pero.setColor(Qt.red)
+
+        #draw the graph
+        #TODO not manual input of the expression
+        x_values = np.arange(-(self.stred_grafu_x)/self.pole_grafu, (self.stred_grafu_x)/self.pole_grafu, 1/100)
+        #pridavani posledniho cisla nefunguje
+        last_x = self.stred_grafu_x/self.pole_grafu
+        np.append(x_values, last_x)
+        print(x_values)
+        y_values = [math.tan(x) for x in x_values]
+        #pridani posledniho cisla nefunguje
+        y_values.append(math.tan(last_x))
+
+        #vytvor path pro vyraz
+        for i in range(len(x_values)):
+            x = self.kraj_x + self.stred_grafu_x + (x_values[i]*self.pole_grafu) # vzdalenost od kraje + pulka grafu jelikoz hodnoty jsou od - do plusu ale tady pracuji jen v plusu + hodnota
+            if (y_values[i] * self.pole_grafu) > self.stred_grafu_y and i != 0: # pokud je hodnota y vetsi nez vyska grafu a neni to prvni cislo tak cara na kraj grafu nahoru a posun pero na hodnotu x a na kraj grafu nahore
+                trasa.lineTo(x, self.kraj_y)
+                trasa.moveTo(x, self.kraj_y)
+            elif (y_values[i] * self.pole_grafu) < -self.stred_grafu_y and i != 0: # pokud je mensi na x a kraj grafu dole posun na x a na graf dole
+                trasa.moveTo(x, self.kraj_y + self.vyska_grafu)
+            else:       
+                y = self.kraj_y + self.stred_grafu_y - (y_values[i] * self.pole_grafu) # vytvor y od kraje grafu pulka + pul
+                if i == 0: #pokud prvni posun na xy pozici
+                    trasa.moveTo(x, y)
+                else:
+                    trasa.lineTo(x, y) #pokud dalsi caru na aktualni xy pozici
+        global pomocna
+        if pomocna == 0:
+            self.resize(self.sirka_grafu+200,self.vyska_grafu+100)
+            pomocna += 1
+        
+        graph_item = QGraphicsPathItem(trasa)
+        graph_item.setPen(pero)
+        self.scene.addItem(graph_item)
+    
 
     def paintEvent(self, event):
-
-        # vypocitani hodnot aby se nepocitaly pokazde
-        self.stred_grafu_x = self.sirka_grafu/2 #prostredek grafu na ose x
-        self.stred_grafu_y = self.vyska_grafu/2 #prostredek grafu na ose y
 
         # Vytvoreni pera
         pero = QPen()
@@ -74,22 +126,18 @@ class MathGraphApp(QMainWindow):
         pero.setWidth(2)
 
         # Vytvareni tras protoze jsou ctyri ruzne barvy
-        trasa1 = QPainterPath()
+        trasa_mrizi = QPainterPath()
         trasa2 = QPainterPath()
         trasa3 = QPainterPath()
         trasa4 = QPainterPath()
 
-        # Pozadi pro graf aby prekrylo to predchozi
-        trasa4.addRect(self.kraj_x, self.kraj_y, self.sirka_grafu, self.vyska_grafu)
-        graph_item = QGraphicsPathItem(trasa4)
-        graph_item.setPen(pero)
-        graph_item.setBrush(QBrush(QColor(Qt.white)))
-        self.scene.addItem(graph_item)
+        self.vykresliPozadi(trasa4, pero)
+        self.nakresliKartezskouSoustavu(trasa_mrizi, pero)
+        self.vykresliOsy(trasa2, pero)
 
-        # Nastaveni pera pro vykresleni kartezske soustavy
+    def nakresliKartezskouSoustavu(self, trasa, pero):
         pero.setColor(Qt.black)
         pero.setWidth(1)
-
         # Vytvoreni hodnot na ose x a samotnych vertikalnich os do prvni pulky
         for i  in np.arange (self.stred_grafu_x, self.sirka_grafu, 50) :
             x_label_text = (i - self.stred_grafu_x) / self.pole_grafu # Co bude na danem popisku
@@ -106,13 +154,13 @@ class MathGraphApp(QMainWindow):
 
             # Prvni caru zacni v levem hornim rohu a udelej caru dolu
             if i == 0:
-                trasa1.moveTo(self.kraj_x,self.kraj_y)
-                trasa1.lineTo(self.kraj_x, self.vyska_grafu + self.kraj_y)
+                trasa.moveTo(self.kraj_x,self.kraj_y)
+                trasa.lineTo(self.kraj_x, self.vyska_grafu + self.kraj_y)
             
             # Presun nahoru posun o jedno policko a udelej caru dolu
             else:
-                trasa1.moveTo(self.pozice_pera_x, self.kraj_y)
-                trasa1.lineTo(self.pozice_pera_x, self.vyska_grafu + self.kraj_y)
+                trasa.moveTo(self.pozice_pera_x, self.kraj_y)
+                trasa.lineTo(self.pozice_pera_x, self.vyska_grafu + self.kraj_y)
         
         pocet_zaokrouhlenych_mist = 1
 
@@ -128,13 +176,13 @@ class MathGraphApp(QMainWindow):
             self.scene.addItem(x_label)
             # Zacni ve stredu a udelej caru dolu
             if i == 0:
-                trasa1.moveTo(self.kraj_x,self.kraj_y)
-                trasa1.lineTo(self.kraj_x, self.vyska_grafu + self.kraj_y)
+                trasa.moveTo(self.kraj_x,self.kraj_y)
+                trasa.lineTo(self.kraj_x, self.vyska_grafu + self.kraj_y)
             # Presun nahoru do noveho pole a udelej caru dolu
             else:
                 self.graph_x_pen = self.kraj_x + i
-                trasa1.moveTo(self.graph_x_pen, self.kraj_y)
-                trasa1.lineTo(self.graph_x_pen, self.vyska_grafu + self.kraj_y)    
+                trasa.moveTo(self.graph_x_pen, self.kraj_y)
+                trasa.lineTo(self.graph_x_pen, self.vyska_grafu + self.kraj_y)    
 
         # Horizontalni cary
         for i  in np.arange (self.stred_grafu_y + self.kraj_y - 50, self.vyska_grafu, 50) :
@@ -147,12 +195,12 @@ class MathGraphApp(QMainWindow):
             y_label.setPos(self.kraj_x + self.stred_grafu_x, self.kraj_y + i)
             self.scene.addItem(y_label)
             if i == 0:
-                trasa1.moveTo(self.kraj_x,self.kraj_y)
-                trasa1.lineTo(self.sirka_grafu + self.kraj_x, self.kraj_y)
+                trasa.moveTo(self.kraj_x,self.kraj_y)
+                trasa.lineTo(self.sirka_grafu + self.kraj_x, self.kraj_y)
             else:
                 self.graph_y_pen = self.kraj_y + i
-                trasa1.moveTo(self.kraj_x, self.graph_y_pen)
-                trasa1.lineTo(self.sirka_grafu + self.kraj_x, self.graph_y_pen)
+                trasa.moveTo(self.kraj_x, self.graph_y_pen)
+                trasa.lineTo(self.sirka_grafu + self.kraj_x, self.graph_y_pen)
 
         for i  in reversed(np.arange (self.kraj_y - 50, self.stred_grafu_y, 50)) :
             y_label_text = (i - self.stred_grafu_y) / self.pole_grafu * - 1
@@ -164,30 +212,44 @@ class MathGraphApp(QMainWindow):
             y_label.setPos(self.kraj_x + self.stred_grafu_x, self.kraj_y + i)
             self.scene.addItem(y_label)
             if i == 0:
-                trasa1.moveTo(self.kraj_x,self.kraj_y)
-                trasa1.lineTo(self.sirka_grafu + self.kraj_x, self.kraj_y)
+                trasa.moveTo(self.kraj_x,self.kraj_y)
+                trasa.lineTo(self.sirka_grafu + self.kraj_x, self.kraj_y)
             else:
                 self.graph_y_pen = self.kraj_y + i
-                trasa1.moveTo(self.kraj_x, self.graph_y_pen)
-                trasa1.lineTo(self.sirka_grafu + self.kraj_x, self.graph_y_pen)
+                trasa.moveTo(self.kraj_x, self.graph_y_pen)
+                trasa.lineTo(self.sirka_grafu + self.kraj_x, self.graph_y_pen)
         
         # Create a QGraphicsPathItem to display the graph
-        graph_item = QGraphicsPathItem(trasa1)
+        graph_item = QGraphicsPathItem(trasa)
         graph_item.setPen(pero)
         self.scene.addItem(graph_item)
         
-        #y and x axes
+    def vykresliPozadi(self, trasa, pero):
+        trasa.addRect(self.kraj_x, self.kraj_y, self.sirka_grafu, self.vyska_grafu)
+        graph_item = QGraphicsPathItem(trasa)
+        graph_item.setPen(pero)
+        graph_item.setBrush(QBrush(QColor(Qt.white)))
+        self.scene.addItem(graph_item)
+
+    def vykresliOsy(self, trasa, pero):
+
         pero.setWidth(2)
         pero.setColor(Qt.darkBlue)
-        trasa2.moveTo(self.kraj_x + self.stred_grafu_x, self.kraj_y)
-        trasa2.lineTo(self.kraj_x + self.stred_grafu_x, self.kraj_y + self.vyska_grafu)
-        trasa2.moveTo(self.kraj_x, self.kraj_y + self.stred_grafu_y)
-        trasa2.lineTo(self.kraj_x + self.sirka_grafu,  self.kraj_y + self.stred_grafu_y)
-         
-        graph_item = QGraphicsPathItem(trasa2)
+        trasa.moveTo(self.kraj_x + self.stred_grafu_x, self.kraj_y)
+        trasa.lineTo(self.kraj_x + self.stred_grafu_x, self.kraj_y + self.vyska_grafu)
+        trasa.moveTo(self.kraj_x, self.kraj_y + self.stred_grafu_y)
+        trasa.lineTo(self.kraj_x + self.sirka_grafu,  self.kraj_y + self.stred_grafu_y)
+        
+        graph_item = QGraphicsPathItem(trasa)
         graph_item.setPen(pero)
         self.scene.addItem(graph_item)
-            
+        
+    """def nakresliKrivkuGrafu(self, trasa, pero):            
+
+        pero.setWidth(2)
+        pero.setColor(Qt.red)
+        
+        graf_text = self.textove_pole_funkce.text()
         #draw the graph
         #TODO not manual input of the expression
         x_values = np.arange(-(self.stred_grafu_x)/self.pole_grafu, (self.stred_grafu_x)/self.pole_grafu, 1/100)
@@ -195,7 +257,7 @@ class MathGraphApp(QMainWindow):
         last_x = self.stred_grafu_x/self.pole_grafu
         np.append(x_values, last_x)
         print(x_values)
-        y_values = [math.tan(x) for x in x_values]
+        y_values = [eval(graf_text) for x in x_values]
         #pridani posledniho cisla nefunguje
         y_values.append(math.tan(last_x))
 
@@ -203,29 +265,24 @@ class MathGraphApp(QMainWindow):
         for i in range(len(x_values)):
             x = self.kraj_x + self.stred_grafu_x + (x_values[i]*self.pole_grafu) # vzdalenost od kraje + pulka grafu jelikoz hodnoty jsou od - do plusu ale tady pracuji jen v plusu + hodnota
             if (y_values[i] * self.pole_grafu) > self.stred_grafu_y and i != 0: # pokud je hodnota y vetsi nez vyska grafu a neni to prvni cislo tak cara na kraj grafu nahoru a posun pero na hodnotu x a na kraj grafu nahore
-                trasa3.lineTo(x, self.kraj_y)
-                trasa3.moveTo(x, self.kraj_y)
+                trasa.lineTo(x, self.kraj_y)
+                trasa.moveTo(x, self.kraj_y)
             elif (y_values[i] * self.pole_grafu) < -self.stred_grafu_y and i != 0: # pokud je mensi na x a kraj grafu dole posun na x a na graf dole
-                trasa3.moveTo(x, self.kraj_y + self.vyska_grafu)
+                trasa.moveTo(x, self.kraj_y + self.vyska_grafu)
             else:       
                 y = self.kraj_y + self.stred_grafu_y - (y_values[i] * self.pole_grafu) # vytvor y od kraje grafu pulka + pul
                 if i == 0: #pokud prvni posun na xy pozici
-                    trasa3.moveTo(x, y)
+                    trasa.moveTo(x, y)
                 else:
-                    trasa3.lineTo(x, y) #pokud dalsi caru na aktualni xy pozici
+                    trasa.lineTo(x, y) #pokud dalsi caru na aktualni xy pozici
         global pomocna
         if pomocna == 0:
             self.resize(self.sirka_grafu+200,self.vyska_grafu+100)
             pomocna += 1
         
-
-
-        pero.setWidth(2)
-        pero.setColor(Qt.red)
-        graph_item = QGraphicsPathItem(trasa3)
+        graph_item = QGraphicsPathItem(trasa)
         graph_item.setPen(pero)
-        self.scene.addItem(graph_item)
-
+        self.scene.addItem(graph_item)"""
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
