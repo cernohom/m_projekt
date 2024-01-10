@@ -57,14 +57,15 @@ class MathGraphApp(QMainWindow):
         priblizeni.clicked.connect(self.priblizeni) #Co se stane kdyz zmacknu tlacitko
         priblizeni.clicked.connect(self.vykresliKrivkuGrafu)
         
-        textove_pole_funkce = QLineEdit(self)
-        textove_pole_funkce.setGeometry(self.sirka_grafu + self.kraj_x - 150, self.kraj_y + 100, 140, 30)
+        self.textove_pole = QLineEdit(self)
+        self.textove_pole.setGeometry(self.sirka_grafu + self.kraj_x - 150, self.kraj_y + 100, 140, 30)
+
         # Tlacitko na priblizeni
         self.potvrzeni = QPushButton("PyQt button", self)
         self.potvrzeni.setText("potvrzeni")
         self.potvrzeni.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + 300, self.velikost_tlacitka, self.velikost_tlacitka)
-        self.potvrzeni.clicked.connect(self.vykresliKrivkuGrafu) #Co se stane kdyz zmacknu tlacitko
-        self.vyraz = self.potvrzeni.text()
+        self.potvrzeni.clicked.connect(self.zmacknutoPotvrzeni) #Co se stane kdyz zmacknu tlacitko
+
         # Tlacitko na oddaleni
         oddaleni = QPushButton("PyQt button", self)
         oddaleni.setText("-")
@@ -97,8 +98,15 @@ class MathGraphApp(QMainWindow):
     def oddaleni(self):
         self.pole_grafu = self.pole_grafu / 2
         self.view.repaint()
+
+    def zmacknutoPotvrzeni(self):
+        self.vyraz = self.textove_pole.text()
+        self.vyrazy = []
+        self.vyrazy.append(self.vyraz)
+
+        self.vykresliKrivkuGrafu(self.vyrazy)
     
-    def vykresliKrivkuGrafu(self):
+    def vykresliKrivkuGrafu(self, vyrazy : list):
         pero = QPen()
         trasa = QPainterPath()
 
@@ -108,30 +116,28 @@ class MathGraphApp(QMainWindow):
 
         #draw the graph
         #TODO not manual input of the expression
-        vyraz = sp.sympify(self.vyraz)
-        y = [float(vyraz.subs('x', val)) for val in x]
+        print(vyrazy)
         x_values = np.arange(-(self.stred_grafu_x)/self.pole_grafu, (self.stred_grafu_x)/self.pole_grafu, 1/100)
+        for vyraz in vyrazy:
+            y_values = [eval(vyraz) for x in x_values]
+            #vytvor path pro vyraz
+            for i in range(len(x_values)):
+                x = self.kraj_x + self.stred_grafu_x + (x_values[i]*self.pole_grafu) # vzdalenost od kraje + pulka grafu jelikoz hodnoty jsou od - do plusu ale tady pracuji jen v plusu + hodnota
+                if (y_values[i] * self.pole_grafu) > self.stred_grafu_y and i != 0: # pokud je hodnota y vetsi nez vyska grafu a neni to prvni cislo tak cara na kraj grafu nahoru a posun pero na hodnotu x a na kraj grafu nahore
+                    trasa.lineTo(x, self.kraj_y)
+                    trasa.moveTo(x, self.kraj_y)
+                elif (y_values[i] * self.pole_grafu) < -self.stred_grafu_y and i != 0: # pokud je mensi na x a kraj grafu dole posun na x a na graf dole
+                    trasa.moveTo(x, self.kraj_y + self.vyska_grafu)
+                else:       
+                    y = self.kraj_y + self.stred_grafu_y - (y_values[i] * self.pole_grafu) # vytvor y od kraje grafu pulka + pul
+                    if i == 0: #pokud prvni posun na xy pozici
+                        trasa.moveTo(x, y)
+                    else:
+                        trasa.lineTo(x, y) #pokud dalsi caru na aktualni xy pozici
         
-        y_values = [math.tan(x) for x in x_values]
-
-        #vytvor path pro vyraz
-        for i in range(len(x_values)):
-            x = self.kraj_x + self.stred_grafu_x + (x_values[i]*self.pole_grafu) # vzdalenost od kraje + pulka grafu jelikoz hodnoty jsou od - do plusu ale tady pracuji jen v plusu + hodnota
-            if (y_values[i] * self.pole_grafu) > self.stred_grafu_y and i != 0: # pokud je hodnota y vetsi nez vyska grafu a neni to prvni cislo tak cara na kraj grafu nahoru a posun pero na hodnotu x a na kraj grafu nahore
-                trasa.lineTo(x, self.kraj_y)
-                trasa.moveTo(x, self.kraj_y)
-            elif (y_values[i] * self.pole_grafu) < -self.stred_grafu_y and i != 0: # pokud je mensi na x a kraj grafu dole posun na x a na graf dole
-                trasa.moveTo(x, self.kraj_y + self.vyska_grafu)
-            else:       
-                y = self.kraj_y + self.stred_grafu_y - (y_values[i] * self.pole_grafu) # vytvor y od kraje grafu pulka + pul
-                if i == 0: #pokud prvni posun na xy pozici
-                    trasa.moveTo(x, y)
-                else:
-                    trasa.lineTo(x, y) #pokud dalsi caru na aktualni xy pozici
-        
-        graph_item = QGraphicsPathItem(trasa)
-        graph_item.setPen(pero)
-        self.scene.addItem(graph_item)
+            graph_item = QGraphicsPathItem(trasa)
+            graph_item.setPen(pero)
+            self.scene.addItem(graph_item)
 
     def vykresliKartezskouSoustavu(self, trasa, pero):
         pero.setColor(Qt.black)
@@ -241,6 +247,8 @@ class MathGraphApp(QMainWindow):
         graph_item = QGraphicsPathItem(trasa)
         graph_item.setPen(pero)
         self.scene.addItem(graph_item)
+
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
