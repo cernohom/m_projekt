@@ -5,7 +5,7 @@ import numpy as np
 import sympy as sp
 import math
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 
 class MathGraphApp(QMainWindow):
@@ -88,12 +88,13 @@ class MathGraphApp(QMainWindow):
         self.historie.clicked.connect(self.zmacknutaHistorie) #Co se stane kdyz zmacknu tlacitko
         self.historie.setFont(self.font)
 
-
+    """
+    zjistit jak dat enter
     def keyPressEvent(self, event) -> None:
-        print("AH")
-        if (event.key() == 16777220) or (event.key() == 43):
+        if event.key() == (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter): 
             self.zmacknutoPotvrzeni
-        
+    """
+
     # Co se stane kdyz zmacknu priblizeni
     def priblizeni(self):
         self.pole_grafu = self.pole_grafu * 2
