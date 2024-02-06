@@ -2,11 +2,18 @@ import sys
 import typing
 from PyQt5 import QtGui
 import numpy as np
-import sympy as sp
 import math
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
+import sympy as sp
+
+def safe_eval(expr):
+    try:
+        return eval(expr)
+    except ValueError as e:
+        # Handle the exception or return a default value
+        return None
 
 class MathGraphApp(QMainWindow):
     def __init__(self):
@@ -23,7 +30,7 @@ class MathGraphApp(QMainWindow):
 
         # Hodnoty pro graf
 
-        self.pole_grafu = 50
+
         """
         #pokud bych chtel podle velikosti obrazovky nutne?
         self.screen = app.primaryScreen()
@@ -31,7 +38,7 @@ class MathGraphApp(QMainWindow):
         self.sirka_grafu =  self.size.width()
         self.vyska_grafu = self.size.height()
         """
-
+        self.pole_grafu = 50
         self.sirka_grafu = 1200
         self.vyska_grafu = 800
         self.kraj_x = 100
@@ -39,6 +46,7 @@ class MathGraphApp(QMainWindow):
         self.velikost_tlacitka = 50
         self.sila_priblizeni = 50
         self.vyrazy = []
+        self.vyrazy_barvy = {}
         self.font = QFont("Arial", 15)
 
         # vypocitani hodnot aby se nepocitaly pokazde
@@ -57,14 +65,14 @@ class MathGraphApp(QMainWindow):
         # Tlacitko na priblizeni
         priblizeni = QPushButton("PyQt button", self)
         priblizeni.setText("+")
-        priblizeni.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka, self.velikost_tlacitka, self.velikost_tlacitka)
+        priblizeni.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y, self.velikost_tlacitka, self.velikost_tlacitka)
         priblizeni.clicked.connect(self.priblizeni) #Co se stane kdyz zmacknu tlacitko
         priblizeni.setFont(self.font)
 
         # Tlacitko na oddaleni
         oddaleni = QPushButton("PyQt button", self)
         oddaleni.setText("-")
-        oddaleni.setGeometry(self.sirka_grafu + self.kraj_x, self.kraj_y + self.velikost_tlacitka, self.velikost_tlacitka, self.velikost_tlacitka)
+        oddaleni.setGeometry(self.sirka_grafu + self.kraj_x, self.kraj_y, self.velikost_tlacitka, self.velikost_tlacitka)
         oddaleni.clicked.connect(self.oddaleni) # Co se stane kdyz zmacknu tlacitko
         oddaleni.setFont(self.font)
         
@@ -77,17 +85,39 @@ class MathGraphApp(QMainWindow):
         self.potvrzeni = QPushButton("PyQt button", self)
         self.potvrzeni.setText("Vyrazy")
         self.potvrzeni.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka * 4, self.velikost_tlacitka*2, self.velikost_tlacitka*6)
-        self.potvrzeni.clicked.connect(self.zmacknutoPotvrzeni) #Co se stane kdyz zmacknu tlacitko
+        self.potvrzeni.clicked.connect(lambda: self.zmacknutoPotvrzeni(Qt.red))#Co se stane kdyz zmacknu tlacitko
         self.potvrzeni.setFont(QFont("Arial", 12))
         self.potvrzeni.setStyleSheet("text-align:top")
 
         #tlacitko na vymazani historie
-        self.historie = QPushButton("PyQt button", self)
-        self.historie.setText("AC")
-        self.historie.setGeometry(self.sirka_grafu + self.kraj_x,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka)
-        self.historie.clicked.connect(self.zmacknutaHistorie) #Co se stane kdyz zmacknu tlacitko
-        self.historie.setFont(self.font)
+        historie = QPushButton("PyQt button", self)
+        historie.setText("AC")
+        historie.setGeometry(self.sirka_grafu + self.kraj_x,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka)
+        historie.clicked.connect(self.zmacknutoAC) #Co se stane kdyz zmacknu tlacitko
+        historie.setFont(self.font)
 
+        # Tlacitko na zelenou
+        zelena = QPushButton("PyQt button", self)
+        zelena.setText("=")
+        zelena.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka, self.velikost_tlacitka, self.velikost_tlacitka)
+        zelena.clicked.connect(lambda: self.zmacknutoPotvrzeni(Qt.green)) # Co se stane kdyz zmacknu tlacitko
+        zelena.setFont(self.font)
+        zelena.setStyleSheet("background-color: green")        
+
+        # Tlacitko na zlutou
+        zluta = QPushButton("PyQt button", self)
+        zluta.setText("=")
+        zluta.setGeometry(self.sirka_grafu + self.kraj_x, self.kraj_y + self.velikost_tlacitka, self.velikost_tlacitka, self.velikost_tlacitka)
+        zluta.clicked.connect(lambda: self.zmacknutoPotvrzeni(Qt.yellow)) # Co se stane kdyz zmacknu tlacitko
+        zluta.setFont(self.font)
+        zluta.setStyleSheet("background-color: yellow")
+
+        cyan = QPushButton("PyQt button", self)
+        cyan.setText("=")
+        cyan.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka)
+        cyan.clicked.connect(lambda: self.zmacknutoPotvrzeni(Qt.cyan)) # Co se stane kdyz zmacknu tlacitko
+        cyan.setFont(self.font)
+        cyan.setStyleSheet("background-color: cyan")
     """
     zjistit jak dat enter
     def keyPressEvent(self, event) -> None:
@@ -107,13 +137,15 @@ class MathGraphApp(QMainWindow):
         self.vykresliGraf()
         self.vyhodnotVyrazy(self.vyrazy)
     
-    def zmacknutaHistorie(self):
+    def zmacknutoAC(self):
         self.vyrazy = []
         self.potvrzeni.setText("vymazani")
+        self.vyhodnotVyrazy(self.vyrazy)
 
-    def zmacknutoPotvrzeni(self):
+    def zmacknutoPotvrzeni(self, barva):
             self.vyraz = self.textove_pole.text()
             self.vyrazy.append(self.vyraz)
+            self.vyrazy_barvy[self.vyraz] = barva
             self.vyhodnotVyrazy(self.vyrazy)
 
     def vykresliGraf(self):
@@ -132,43 +164,48 @@ class MathGraphApp(QMainWindow):
         self.vykresliOsy(trasa_os,pero)
     
     def vyhodnotVyrazy(self, vyrazy : list):
-        for vyraz in vyrazy:
-            if self.obsahujeX(vyraz):
-                try:
-                    self.vykresliKrivkuGrafu(vyraz)
-                    self.potvrzeni.setText(self.listNaTextOdstavce(self.vyrazy))
-                except:
+        if not vyrazy:
+            self.vykresliGraf()
+        else:
+            for vyraz in vyrazy:
+                self.barva = self.vyrazy_barvy[vyraz]
+                if self.obsahujeX(vyraz):
                     try:
-                        novy_vyraz = "math." + str(vyraz)
-                        self.vykresliKrivkuGrafu(novy_vyraz)
+                        self.vykresliKrivkuGrafu(vyraz, self.barva)
                         self.potvrzeni.setText(self.listNaTextOdstavce(self.vyrazy))
+
                     except:
-                        print("Nelze vyhodnotit vloženou hodnotu")
-                        self.vyrazy.remove(vyraz)
-                        self.potvrzeni.setText("Nelze vyhodnotit\nvloženou hodnotu")
-            else:        
-                try:
-                    vysledek = eval(vyraz)
-                    print("1")
-                    self.vyrazy.remove(vyraz)
-                    vysledek  = round(vysledek, 3)
-                    self.novy_vyraz = str(vyraz) + " = " + str(vysledek)
-                    self.vyrazy.append(self.novy_vyraz)
-                    self.potvrzeni.setText(self.listNaTextOdstavce(self.vyrazy))
-                except:
                         try:
                             novy_vyraz = "math." + str(vyraz)
-                            vysledek = eval(novy_vyraz)
-                            vysledek  = round(vysledek, 3)
-                            self.vyrazy.remove(vyraz)
-                            self.novy_vyraz = str(vyraz) + " = " + str(vysledek)
-                            self.vyrazy.append(self.novy_vyraz)
+                            self.vykresliKrivkuGrafu(novy_vyraz, self.barva)
                             self.potvrzeni.setText(self.listNaTextOdstavce(self.vyrazy))
                         except:
-                            self.vyrazy.remove(vyraz)
                             print("Nelze vyhodnotit vloženou hodnotu")
-                            self.potvrzeni.setText("Nelze vyhodnotit\n vloženou hodnotu")
-    
+                            self.vyrazy.remove(vyraz)
+                            self.potvrzeni.setText("Nelze vyhodnotit\nvloženou hodnotu")
+                else:        
+                    try:
+                        vysledek = eval(vyraz)
+                        print("1")
+                        self.vyrazy.remove(vyraz)
+                        vysledek  = round(vysledek, 3)
+                        self.novy_vyraz = str(vyraz) + " = " + str(vysledek)
+                        self.vyrazy.append(self.novy_vyraz)
+                        self.potvrzeni.setText(self.listNaTextOdstavce(self.vyrazy))
+                    except:
+                            try:
+                                novy_vyraz = "math." + str(vyraz)
+                                vysledek = eval(novy_vyraz)
+                                vysledek  = round(vysledek, 3)
+                                self.vyrazy.remove(vyraz)
+                                self.novy_vyraz = str(vyraz) + " = " + str(vysledek)
+                                self.vyrazy.append(self.novy_vyraz)
+                                self.potvrzeni.setText(self.listNaTextOdstavce(self.vyrazy))
+                            except:
+                                self.vyrazy.remove(vyraz)
+                                print("Nelze vyhodnotit vloženou hodnotu")
+                                self.potvrzeni.setText("Nelze vyhodnotit\n vloženou hodnotu")
+        
     def listNaTextOdstavce(self, list :list) -> str:
             string = ""
             for i in list:
@@ -176,29 +213,58 @@ class MathGraphApp(QMainWindow):
                 string += "\n"
             return string
 
-    def vykresliKrivkuGrafu(self, vyraz) -> None:
+    def vykresliKrivkuGrafu(self, vyraz, barva) -> None:
         pero = QPen()
         trasa = QPainterPath()
 
         pero.setWidth(2)
-        pero.setColor(Qt.red)
+        pero.setColor(barva)
+
+        def checkifcontinus(func,x,symbol):
+            return (sp.limit(func, symbol, x).is_real)
 
         x_values = np.arange(-(self.stred_grafu_x)/self.pole_grafu, self.stred_grafu_x/self.pole_grafu, 1/100)
-        y_values = [eval(vyraz) for x in x_values]
+        """!!! Je lepší použít tuto funkci než eval(), umožňuje mnohem více funkcí
+            Teď se tam přidává None, pokud nemá funkce v daném bodě definiční obor"""
+        f = sp.lambdify(sp.Symbol("x"), vyraz, "math") 
+        y_values = []
+        for a in x_values:
+            try:
+                y_values.append(sp.N(f(a)))
+            except ValueError:
+                # handle division by zero error
+                # leave empty for now
+                y_values.append(None)
+      
+
+        """!!! Zde je přidána podmínka pro ten None, že se to v tom případě nevykresluje, pouze se to pero posouvá po ose x
+            Dále byly provedené menší úpravy, které upravují některé nedokreslování, či naopak nevyžádané čáry navíc"""
         #vytvor path pro vyraz
         for i in range(len(x_values)):
             pozice_x = self.kraj_x + self.stred_grafu_x + (x_values[i]*self.pole_grafu) # vzdalenost od kraje + pulka grafu jelikoz hodnoty jsou od - do plusu ale tady pracuji jen v plusu + hodnota
-            if (y_values[i] * self.pole_grafu) > self.stred_grafu_y and i != 0: # pokud je hodnota y vetsi nez vyska grafu a neni to prvni cislo tak cara na kraj grafu nahoru a posun pero na hodnotu x a na kraj grafu nahore
-                trasa.lineTo(pozice_x, self.kraj_y)
-                trasa.moveTo(pozice_x, self.kraj_y)
-            elif (y_values[i] * self.pole_grafu) < -self.stred_grafu_y and i != 0: # pokud je mensi na x a kraj grafu dole posun na x a na graf dole
-                trasa.moveTo(pozice_x, self.kraj_y + self.vyska_grafu)
-            else:       
-                pozice_y = self.kraj_y + self.stred_grafu_y - (y_values[i] * self.pole_grafu) # vytvor y od kraje grafu pulka + pul
-                if i == 0: #pokud prvni posun na xy pozici
-                    trasa.moveTo(pozice_x, pozice_y)
-                else:
-                    trasa.lineTo(pozice_x, pozice_y) #pokud dalsi caru na aktualni xy pozici
+            if y_values[i] is None:
+                pozice_y = self.kraj_y + self.stred_grafu_y
+                trasa.moveTo(pozice_x, pozice_y)
+            else:
+                if (y_values[i] * self.pole_grafu) > self.stred_grafu_y and i != 0 and (y_values[i-1] * self.pole_grafu) >= -self.stred_grafu_y: # pokud je hodnota y vetsi nez vyska grafu a neni to prvni cislo tak cara na kraj grafu nahoru a posun pero na hodnotu x a na kraj grafu nahore
+                    trasa.lineTo(pozice_x, self.kraj_y)
+                    trasa.moveTo(pozice_x, self.kraj_y)
+                elif (y_values[i] * self.pole_grafu) > self.stred_grafu_y and i != 0:
+                    trasa.moveTo(pozice_x, self.kraj_y)
+                elif (y_values[i] * self.pole_grafu) < -self.stred_grafu_y and i != 0: # pokud je mensi na x a kraj grafu dole posun na x a na graf dole
+                    trasa.moveTo(pozice_x, self.kraj_y + self.vyska_grafu)
+                else:       
+                    pozice_y = self.kraj_y + self.stred_grafu_y - (y_values[i] * self.pole_grafu) # vytvor y od kraje grafu pulka + pul
+                    
+                    if i == 0 or y_values[i-1] is None: #pokud prvni posun na xy pozici
+                        if (y_values[i] * self.pole_grafu) > self.stred_grafu_y:
+                            trasa.moveTo(pozice_x, self.kraj_y)
+                        elif (y_values[i] * self.pole_grafu) < -self.stred_grafu_y:
+                            trasa.moveTo(pozice_x, self.kraj_y + self.vyska_grafu)
+                        else:
+                            trasa.moveTo(pozice_x, pozice_y)
+                    else:
+                        trasa.lineTo(pozice_x, pozice_y) #pokud dalsi caru na aktualni xy pozici
     
         graph_item = QGraphicsPathItem(trasa)
         graph_item.setPen(pero)
@@ -266,7 +332,7 @@ class MathGraphApp(QMainWindow):
                 round(y_label_text, 3)
             else:
                 round(y_label_text, 1)
-            y_label = QGraphicsTextItem(str(y_label_text))
+            y_label = QGraphicsTextItem(str (round (y_label_text, pocet_zaokrouhlenych_mist)))
             y_label.setPos(self.kraj_x + self.stred_grafu_x, self.kraj_y + i)
             self.scene.addItem(y_label)
             if i == 0:
