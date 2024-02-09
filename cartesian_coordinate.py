@@ -173,7 +173,6 @@ class MathGraphApp(QMainWindow):
                     try:
                         self.vykresliKrivkuGrafu(vyraz, self.barva)
                         self.potvrzeni.setText(self.listNaTextOdstavce(self.vyrazy))
-
                     except:
                         try:
                             novy_vyraz = "math." + str(vyraz)
@@ -186,7 +185,6 @@ class MathGraphApp(QMainWindow):
                 else:        
                     try:
                         vysledek = eval(vyraz)
-                        print("1")
                         self.vyrazy.remove(vyraz)
                         vysledek  = round(vysledek, 3)
                         self.novy_vyraz = str(vyraz) + " = " + str(vysledek)
@@ -212,10 +210,24 @@ class MathGraphApp(QMainWindow):
                 string += i
                 string += "\n"
             return string
+    
+    def jeVGrafu (self, pozice_y):
+        if self.kraj_y < pozice_y < (self.kraj_y + self.vyska_grafu):
+            return True
+        else:
+            return False
 
     def vykresliKrivkuGrafu(self, vyraz, barva) -> None:
+        print("homo")
         pero = QPen()
         trasa = QPainterPath()
+        malovat_priste = False
+        predchozi_pozice_y = None
+        predchozi_v_grafu = False
+        predchozi_pozice_x = self.kraj_x
+
+
+
 
         pero.setWidth(2)
         pero.setColor(barva)
@@ -240,32 +252,71 @@ class MathGraphApp(QMainWindow):
         """!!! Zde je přidána podmínka pro ten None, že se to v tom případě nevykresluje, pouze se to pero posouvá po ose x
             Dále byly provedené menší úpravy, které upravují některé nedokreslování, či naopak nevyžádané čáry navíc"""
         #vytvor path pro vyraz
+        #pro kazde číslo na ose
         for i in range(len(x_values)):
-            pozice_x = self.kraj_x + self.stred_grafu_x + (x_values[i]*self.pole_grafu) # vzdalenost od kraje + pulka grafu jelikoz hodnoty jsou od - do plusu ale tady pracuji jen v plusu + hodnota
-            if y_values[i] is None:
-                pozice_y = self.kraj_y + self.stred_grafu_y
-                trasa.moveTo(pozice_x, pozice_y)
-            else:
-                if (y_values[i] * self.pole_grafu) > self.stred_grafu_y and i != 0 and (y_values[i-1] * self.pole_grafu) >= -self.stred_grafu_y: # pokud je hodnota y vetsi nez vyska grafu a neni to prvni cislo tak cara na kraj grafu nahoru a posun pero na hodnotu x a na kraj grafu nahore
-                    trasa.lineTo(pozice_x, self.kraj_y)
+            # převeď normální osu na velikost grafu (vzdálenost od kraje + pulka grafu jelikoz hodnoty jsou od minus do plusu ale grafove hodnoty jsou jen od nuly do plusu + hodnota
+            pozice_x = self.kraj_x + self.stred_grafu_x + (x_values[i]*self.pole_grafu)
+            # pokud hodnota y není (dělení nulou) přesuň pero
+            
+            pozice_y = self.kraj_y + self.stred_grafu_y - (y_values[i] * self.pole_grafu) # vytvor y od kraje grafu pulka + pul
+            
+            if self.jeVGrafu(pozice_y):
+                if predchozi_pozice_y is None:
+                    trasa.moveTo(pozice_x, pozice_y)
+                elif predchozi_pozice_y < self.kraj_y:
                     trasa.moveTo(pozice_x, self.kraj_y)
-                elif (y_values[i] * self.pole_grafu) > self.stred_grafu_y and i != 0:
-                    trasa.moveTo(pozice_x, self.kraj_y)
-                elif (y_values[i] * self.pole_grafu) < -self.stred_grafu_y and i != 0: # pokud je mensi na x a kraj grafu dole posun na x a na graf dole
+                    trasa.lineTo(pozice_x, pozice_y)
+                elif pozice_y > self.kraj_y + self.vyska_grafu:
                     trasa.moveTo(pozice_x, self.kraj_y + self.vyska_grafu)
-                else:       
-                    pozice_y = self.kraj_y + self.stred_grafu_y - (y_values[i] * self.pole_grafu) # vytvor y od kraje grafu pulka + pul
+                    trasa.lineTo(pozice_x, pozice_y)
+                else:
+                    trasa.lineTo(pozice_x, pozice_y)
+                predchozi_v_grafu = True
+            elif predchozi_v_grafu:
+                if pozice_y < self.kraj_y:
+                    trasa.lineTo(pozice_x, self.kraj_y)
+                elif pozice_y > self.kraj_y + self.vyska_grafu:
+                    trasa.lineTo(pozice_x, self.kraj_y + self.vyska_grafu)
+                predchozi_v_grafu = False
+            else:
+                predchozi_v_grafu = False
+            predchozi_pozice_y = pozice_y
+
+            """
+            # pokud ma priste malovat
+            if malovat_priste is True:
+                print("sulin")
+                # pokud presahuje nahore udelej caru nahoru
+                if pozice_y < self.kraj_y:
+                    trasa.lineTo(pozice_x, self.kraj_y)
+                    malovat_priste = False
+                # pokud presahuje dole udelej caru dolu
+                elif pozice_y > self.kraj_y + self.vyska_grafu:
+                    trasa.lineTo(pozice_x, self.kraj_y + self.vyska_grafu)
+                    malovat_priste = False
+                else:
+                    trasa.lineTo(pozice_x, pozice_y)
+            else:
+                # jestli funkce nebyla predtim presun na novy bod
+                if predchozi_pozice_y is None:
+                    trasa.moveTo(pozice_x, pozice_y)
+                # jestli byla funkce nad grafem presun na predchozi horni kraj a udelej z nej caru
+                elif predchozi_pozice_y < self.kraj_y:
+                    trasa.moveTo(predchozi_pozice_x, self.kraj_y)
+                    malovat_priste = True
+                # pokud presahovala dole presun na predchozi spodni kraj a udelej z nej caru
+                elif predchozi_pozice_y > self.kraj_y + self.vyska_grafu:
+                    trasa.moveTo(predchozi_pozice_x, self.kraj_y + self.vyska_grafu)
+                    malovat_priste = True
+                else:
+                    print("cowboy")
+                    trasa.lineTo(pozice_x, pozice_y)
                     
-                    if i == 0 or y_values[i-1] is None: #pokud prvni posun na xy pozici
-                        if (y_values[i] * self.pole_grafu) > self.stred_grafu_y:
-                            trasa.moveTo(pozice_x, self.kraj_y)
-                        elif (y_values[i] * self.pole_grafu) < -self.stred_grafu_y:
-                            trasa.moveTo(pozice_x, self.kraj_y + self.vyska_grafu)
-                        else:
-                            trasa.moveTo(pozice_x, pozice_y)
-                    else:
-                        trasa.lineTo(pozice_x, pozice_y) #pokud dalsi caru na aktualni xy pozici
-    
+            predchozi_pozice_y = pozice_y
+            predchozi_pozice_x = pozice_x
+            """
+        
+        
         graph_item = QGraphicsPathItem(trasa)
         graph_item.setPen(pero)
         self.scene.addItem(graph_item)
