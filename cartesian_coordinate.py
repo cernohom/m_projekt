@@ -46,8 +46,10 @@ class MathGraphApp(QMainWindow):
         self.velikost_tlacitka = 50
         self.sila_priblizeni = 50
         self.vyrazy = []
+        self.vyrazy_jednoduche = []
         self.vyrazy_barvy = {}
         self.font = QFont("Arial", 15)
+        self.priblizeni_pocet = 0
 
         # vypocitani hodnot aby se nepocitaly pokazde
         self.stred_grafu_x = self.sirka_grafu/2 #prostredek grafu na ose x
@@ -127,16 +129,33 @@ class MathGraphApp(QMainWindow):
 
     # Co se stane kdyz zmacknu priblizeni
     def priblizeni(self):
-        self.pole_grafu = self.pole_grafu * 2
-        self.vykresliGraf()
-        self.vyhodnotVyrazy(self.vyrazy)
-        
+        if self.priblizeni_pocet <= 4:
+            self.pole_grafu = self.pole_grafu * 2
+            self.vykresliGraf()
+            self.vyhodnotVyrazy(self.vyrazy)
+            self.priblizeni_pocet += 1
+        else:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Více nelze přiblížit")
+            msg.setInformativeText('Je to pro bezpečnost vašeho PC')
+            msg.setWindowTitle("Chyba")
+            msg.exec_()
     # Co se stane kdyz zmacknu priblizeni
     def oddaleni(self):
-        self.pole_grafu = self.pole_grafu / 2
-        self.vykresliGraf()
-        self.vyhodnotVyrazy(self.vyrazy)
-    
+        if self.priblizeni_pocet >= -4:
+            self.pole_grafu = self.pole_grafu / 2
+            self.vykresliGraf()
+            self.vyhodnotVyrazy(self.vyrazy)
+            self.priblizeni_pocet -= 1
+        else:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Více nelze oddálit")
+            msg.setInformativeText('Je to pro bezpečnost vašeho PC')
+            msg.setWindowTitle("Chyba")
+            msg.exec_()
+
     def zmacknutoAC(self):
         self.vyrazy = []
         self.potvrzeni.setText("vymazani")
@@ -145,7 +164,8 @@ class MathGraphApp(QMainWindow):
     def zmacknutoPotvrzeni(self, barva):
             self.vyraz = self.textove_pole.text()
             self.vyrazy.append(self.vyraz)
-            self.vyrazy_barvy[self.vyraz] = barva
+            if self.obsahujeX(self.vyraz):
+                self.vyrazy_barvy[self.vyraz] = barva
             self.vyhodnotVyrazy(self.vyrazy)
 
     def vykresliGraf(self):
@@ -168,8 +188,9 @@ class MathGraphApp(QMainWindow):
             self.vykresliGraf()
         else:
             for vyraz in vyrazy:
-                self.barva = self.vyrazy_barvy[vyraz]
+                
                 if self.obsahujeX(vyraz):
+                    self.barva = self.vyrazy_barvy[vyraz]
                     try:
                         self.vykresliKrivkuGrafu(vyraz, self.barva)
                         self.potvrzeni.setText(self.listNaTextOdstavce(self.vyrazy))
@@ -179,31 +200,40 @@ class MathGraphApp(QMainWindow):
                             self.vykresliKrivkuGrafu(novy_vyraz, self.barva)
                             self.potvrzeni.setText(self.listNaTextOdstavce(self.vyrazy))
                         except:
-                            print("Nelze vyhodnotit vloženou hodnotu")
                             self.vyrazy.remove(vyraz)
-                            self.potvrzeni.setText("Nelze vyhodnotit\nvloženou hodnotu")
-                else:        
-                    try:
-                        vysledek = eval(vyraz)
-                        self.vyrazy.remove(vyraz)
-                        vysledek  = round(vysledek, 3)
-                        self.novy_vyraz = str(vyraz) + " = " + str(vysledek)
-                        self.vyrazy.append(self.novy_vyraz)
-                        self.potvrzeni.setText(self.listNaTextOdstavce(self.vyrazy))
-                    except:
-                            try:
-                                novy_vyraz = "math." + str(vyraz)
-                                vysledek = eval(novy_vyraz)
-                                vysledek  = round(vysledek, 3)
-                                self.vyrazy.remove(vyraz)
-                                self.novy_vyraz = str(vyraz) + " = " + str(vysledek)
-                                self.vyrazy.append(self.novy_vyraz)
-                                self.potvrzeni.setText(self.listNaTextOdstavce(self.vyrazy))
-                            except:
-                                self.vyrazy.remove(vyraz)
-                                print("Nelze vyhodnotit vloženou hodnotu")
-                                self.potvrzeni.setText("Nelze vyhodnotit\n vloženou hodnotu")
-        
+                            msg = QMessageBox()
+                            msg.setIcon(QMessageBox.Critical)
+                            msg.setText("Nelze vyhodnotit vloženou hodnotu")
+                            msg.setWindowTitle("Chyba")
+                            msg.exec_()
+                else:
+                    if vyraz not in self.vyrazy_jednoduche:      
+                        try:
+                            vysledek = eval(vyraz)
+                            self.vyrazy.remove(vyraz)
+                            vysledek  = round(vysledek, 3)
+                            self.novy_vyraz = str(vyraz) + " = " + str(vysledek)
+                            self.vyrazy.append(self.novy_vyraz)
+                            self.vyrazy_jednoduche.append(self.novy_vyraz)
+                            self.potvrzeni.setText(self.listNaTextOdstavce(self.vyrazy))
+                        except:
+                                try:
+                                    novy_vyraz = "math." + str(vyraz)
+                                    vysledek = eval(novy_vyraz)
+                                    vysledek  = round(vysledek, 3)
+                                    self.vyrazy.remove(vyraz)
+                                    self.novy_vyraz = str(vyraz) + " = " + str(vysledek)
+                                    self.vyrazy.append(self.novy_vyraz)
+                                    self.vyrazy_jednoduche.append(self.novy_vyraz)
+                                    self.potvrzeni.setText(self.listNaTextOdstavce(self.vyrazy))
+                                except:
+                                    self.vyrazy.remove(vyraz)
+                                    msg = QMessageBox()
+                                    msg.setIcon(QMessageBox.Critical)
+                                    msg.setText("Nelze vyhodnotit vloženou hodnotu")
+                                    msg.setWindowTitle("Chyba")
+                                    msg.exec_()
+    
     def listNaTextOdstavce(self, list :list) -> str:
             string = ""
             for i in list:
@@ -218,7 +248,6 @@ class MathGraphApp(QMainWindow):
             return False
 
     def vykresliKrivkuGrafu(self, vyraz, barva) -> None:
-        print("homo")
         pero = QPen()
         trasa = QPainterPath()
         malovat_priste = False
@@ -266,7 +295,7 @@ class MathGraphApp(QMainWindow):
                 elif predchozi_pozice_y < self.kraj_y:
                     trasa.moveTo(pozice_x, self.kraj_y)
                     trasa.lineTo(pozice_x, pozice_y)
-                elif pozice_y > self.kraj_y + self.vyska_grafu:
+                elif predchozi_pozice_y > self.kraj_y + self.vyska_grafu:
                     trasa.moveTo(pozice_x, self.kraj_y + self.vyska_grafu)
                     trasa.lineTo(pozice_x, pozice_y)
                 else:
