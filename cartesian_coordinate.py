@@ -30,14 +30,6 @@ class MathGraphApp(QMainWindow):
 
         # Hodnoty pro graf
 
-
-        """
-        #pokud bych chtel podle velikosti obrazovky nutne?
-        self.screen = app.primaryScreen()
-        self.size = self.screen.size()
-        self.sirka_grafu =  self.size.width()
-        self.vyska_grafu = self.size.height()
-        """
         self.pole_grafu = 50
         self.sirka_grafu = 1200
         self.vyska_grafu = 800
@@ -85,18 +77,19 @@ class MathGraphApp(QMainWindow):
         
         # Pole na vypisovani
         self.potvrzeni = QPushButton("PyQt button", self)
-        self.potvrzeni.setText("Vyrazy")
+        self.potvrzeni.setText("Po zmáčknutí\nse vše smaže")
         self.potvrzeni.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka * 4, self.velikost_tlacitka*2, self.velikost_tlacitka*6)
-        self.potvrzeni.clicked.connect(lambda: self.zmacknutoPotvrzeni(Qt.red))#Co se stane kdyz zmacknu tlacitko
-        self.potvrzeni.setFont(QFont("Arial", 12))
+        self.potvrzeni.clicked.connect(self.zmacknutoAC)#Co se stane kdyz zmacknu tlacitko
+        self.potvrzeni.setFont(QFont("Arial", 11))
         self.potvrzeni.setStyleSheet("text-align:top")
 
-        #tlacitko na vymazani historie
-        historie = QPushButton("PyQt button", self)
-        historie.setText("AC")
-        historie.setGeometry(self.sirka_grafu + self.kraj_x,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka)
-        historie.clicked.connect(self.zmacknutoAC) #Co se stane kdyz zmacknu tlacitko
-        historie.setFont(self.font)
+        # Tlacitko na cervenou
+        zelena = QPushButton("PyQt button", self)
+        zelena.setText("=")
+        zelena.setGeometry(self.sirka_grafu + self.kraj_x,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka)
+        zelena.clicked.connect(lambda: self.zmacknutoPotvrzeni(Qt.red)) # Co se stane kdyz zmacknu tlacitko
+        zelena.setFont(self.font)
+        zelena.setStyleSheet("background-color: red") 
 
         # Tlacitko na zelenou
         zelena = QPushButton("PyQt button", self)
@@ -233,14 +226,26 @@ class MathGraphApp(QMainWindow):
                                     msg.setText("Nelze vyhodnotit vloženou hodnotu")
                                     msg.setWindowTitle("Chyba")
                                     msg.exec_()
-    
+
     def listNaTextOdstavce(self, list :list) -> str:
-            string = ""
-            for i in list:
+        string = ""
+        pocet = 0
+        for i in list:
+            pocet = 0
+            if len(i) > 10:
+                for x in i:
+                    if pocet < 10:
+                        string += x
+                        pocet += 1
+                    else:
+                        string += "\n"
+                        string += x
+                        pocet = 0
+            else:
                 string += i
-                string += "\n"
-            return string
-    
+            string += "\n"
+        return string
+
     def jeVGrafu (self, pozice_y):
         if self.kraj_y < pozice_y < (self.kraj_y + self.vyska_grafu):
             return True
@@ -286,65 +291,34 @@ class MathGraphApp(QMainWindow):
             # převeď normální osu na velikost grafu (vzdálenost od kraje + pulka grafu jelikoz hodnoty jsou od minus do plusu ale grafove hodnoty jsou jen od nuly do plusu + hodnota
             pozice_x = self.kraj_x + self.stred_grafu_x + (x_values[i]*self.pole_grafu)
             # pokud hodnota y není (dělení nulou) přesuň pero
-            
-            pozice_y = self.kraj_y + self.stred_grafu_y - (y_values[i] * self.pole_grafu) # vytvor y od kraje grafu pulka + pul
-            
-            if self.jeVGrafu(pozice_y):
-                if predchozi_pozice_y is None:
-                    trasa.moveTo(pozice_x, pozice_y)
-                elif predchozi_pozice_y < self.kraj_y:
-                    trasa.moveTo(pozice_x, self.kraj_y)
-                    trasa.lineTo(pozice_x, pozice_y)
-                elif predchozi_pozice_y > self.kraj_y + self.vyska_grafu:
-                    trasa.moveTo(pozice_x, self.kraj_y + self.vyska_grafu)
-                    trasa.lineTo(pozice_x, pozice_y)
+            if y_values[i] is None:
+                pozice_y = 1000
+                trasa.moveTo(pozice_x, pozice_y)
+                predchozi_pozice_y = None
+            else:    
+                pozice_y = self.kraj_y + self.stred_grafu_y - (y_values[i] * self.pole_grafu) # vytvor y od kraje grafu pulka + pul
+                
+                if self.jeVGrafu(pozice_y):
+                    if predchozi_pozice_y is None:
+                        trasa.moveTo(pozice_x, pozice_y)
+                    elif predchozi_pozice_y < self.kraj_y:
+                        trasa.moveTo(pozice_x, self.kraj_y)
+                        trasa.lineTo(pozice_x, pozice_y)
+                    elif predchozi_pozice_y > self.kraj_y + self.vyska_grafu:
+                        trasa.moveTo(pozice_x, self.kraj_y + self.vyska_grafu)
+                        trasa.lineTo(pozice_x, pozice_y)
+                    else:
+                        trasa.lineTo(pozice_x, pozice_y)
+                    predchozi_v_grafu = True
+                elif predchozi_v_grafu:
+                    if pozice_y < self.kraj_y:
+                        trasa.lineTo(pozice_x, self.kraj_y)
+                    elif pozice_y > self.kraj_y + self.vyska_grafu:
+                        trasa.lineTo(pozice_x, self.kraj_y + self.vyska_grafu)
+                    predchozi_v_grafu = False
                 else:
-                    trasa.lineTo(pozice_x, pozice_y)
-                predchozi_v_grafu = True
-            elif predchozi_v_grafu:
-                if pozice_y < self.kraj_y:
-                    trasa.lineTo(pozice_x, self.kraj_y)
-                elif pozice_y > self.kraj_y + self.vyska_grafu:
-                    trasa.lineTo(pozice_x, self.kraj_y + self.vyska_grafu)
-                predchozi_v_grafu = False
-            else:
-                predchozi_v_grafu = False
-            predchozi_pozice_y = pozice_y
-
-            """
-            # pokud ma priste malovat
-            if malovat_priste is True:
-                print("sulin")
-                # pokud presahuje nahore udelej caru nahoru
-                if pozice_y < self.kraj_y:
-                    trasa.lineTo(pozice_x, self.kraj_y)
-                    malovat_priste = False
-                # pokud presahuje dole udelej caru dolu
-                elif pozice_y > self.kraj_y + self.vyska_grafu:
-                    trasa.lineTo(pozice_x, self.kraj_y + self.vyska_grafu)
-                    malovat_priste = False
-                else:
-                    trasa.lineTo(pozice_x, pozice_y)
-            else:
-                # jestli funkce nebyla predtim presun na novy bod
-                if predchozi_pozice_y is None:
-                    trasa.moveTo(pozice_x, pozice_y)
-                # jestli byla funkce nad grafem presun na predchozi horni kraj a udelej z nej caru
-                elif predchozi_pozice_y < self.kraj_y:
-                    trasa.moveTo(predchozi_pozice_x, self.kraj_y)
-                    malovat_priste = True
-                # pokud presahovala dole presun na predchozi spodni kraj a udelej z nej caru
-                elif predchozi_pozice_y > self.kraj_y + self.vyska_grafu:
-                    trasa.moveTo(predchozi_pozice_x, self.kraj_y + self.vyska_grafu)
-                    malovat_priste = True
-                else:
-                    print("cowboy")
-                    trasa.lineTo(pozice_x, pozice_y)
-                    
-            predchozi_pozice_y = pozice_y
-            predchozi_pozice_x = pozice_x
-            """
-        
+                    predchozi_v_grafu = False
+                predchozi_pozice_y = pozice_y
         
         graph_item = QGraphicsPathItem(trasa)
         graph_item.setPen(pero)
