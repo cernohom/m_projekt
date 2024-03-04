@@ -55,71 +55,39 @@ class MathGraphApp(QMainWindow):
         self.vykresliGraf()
 
     def UiComponents(self):
-
-        # Tlacitko na priblizeni
-        priblizeni = QPushButton("PyQt button", self)
-        priblizeni.setText("+")
-        priblizeni.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y, self.velikost_tlacitka, self.velikost_tlacitka)
-        priblizeni.clicked.connect(self.priblizeni) #Co se stane kdyz zmacknu tlacitko
-        priblizeni.setFont(self.font)
-
-        # Tlacitko na oddaleni
-        oddaleni = QPushButton("PyQt button", self)
-        oddaleni.setText("-")
-        oddaleni.setGeometry(self.sirka_grafu + self.kraj_x, self.kraj_y, self.velikost_tlacitka, self.velikost_tlacitka)
-        oddaleni.clicked.connect(self.oddaleni) # Co se stane kdyz zmacknu tlacitko
-        oddaleni.setFont(self.font)
-        
-        #Textove pole    
-        self.textove_pole = QLineEdit(self)
-        self.textove_pole.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + 3 * self.velikost_tlacitka, self.velikost_tlacitka * 2, self.velikost_tlacitka)
-        self.textove_pole.setFont(self.font)
-        
+        #tlacitko plus
+        self.vytvorTlacitko(self, "+", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y, self.velikost_tlacitka, self.velikost_tlacitka, self.priblizeni, self.font, "")
+        #tlacitko minus
+        self.vytvorTlacitko(self, "-", self.sirka_grafu + self.kraj_x, self.kraj_y, self.velikost_tlacitka, self.velikost_tlacitka, self.oddaleni, self.font, "")
+        #tlacitko = cervene
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.zmacknutoPotvrzeni(Qt.red), self.font, "background-color: red")
+        # tlacitko = zelene
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.zmacknutoPotvrzeni(Qt.green), self.font, "background-color: green")
+        # tlaciko = zlute
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x, self.kraj_y + self.velikost_tlacitka, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.zmacknutoPotvrzeni(Qt.yellow), self.font, "background-color: yellow")
+        # tlacitko = cyan
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.zmacknutoPotvrzeni(Qt.cyan), self.font, "background-color: cyan")
         # Pole na vypisovani
         self.potvrzeni = QPushButton("PyQt button", self)
         self.potvrzeni.setText("Po zmáčknutí\nse vše smaže")
         self.potvrzeni.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka * 4, self.velikost_tlacitka*2, self.velikost_tlacitka*6)
-        self.potvrzeni.clicked.connect(self.zmacknutoAC)#Co se stane kdyz zmacknu tlacitko
+        self.potvrzeni.clicked.connect(self.zmacknutosmazani)#Co se stane kdyz zmacknu tlacitko
         self.potvrzeni.setFont(QFont("Arial", 11))
         self.potvrzeni.setStyleSheet("text-align:top")
-
-        # Tlacitko na cervenou
-        zelena = QPushButton("PyQt button", self)
-        zelena.setText("=")
-        zelena.setGeometry(self.sirka_grafu + self.kraj_x,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka)
-        zelena.clicked.connect(lambda: self.zmacknutoPotvrzeni(Qt.red)) # Co se stane kdyz zmacknu tlacitko
-        zelena.setFont(self.font)
-        zelena.setStyleSheet("background-color: red") 
-
-        # Tlacitko na zelenou
-        zelena = QPushButton("PyQt button", self)
-        zelena.setText("=")
-        zelena.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka, self.velikost_tlacitka, self.velikost_tlacitka)
-        zelena.clicked.connect(lambda: self.zmacknutoPotvrzeni(Qt.green)) # Co se stane kdyz zmacknu tlacitko
-        zelena.setFont(self.font)
-        zelena.setStyleSheet("background-color: green")        
-
-        # Tlacitko na zlutou
-        zluta = QPushButton("PyQt button", self)
-        zluta.setText("=")
-        zluta.setGeometry(self.sirka_grafu + self.kraj_x, self.kraj_y + self.velikost_tlacitka, self.velikost_tlacitka, self.velikost_tlacitka)
-        zluta.clicked.connect(lambda: self.zmacknutoPotvrzeni(Qt.yellow)) # Co se stane kdyz zmacknu tlacitko
-        zluta.setFont(self.font)
-        zluta.setStyleSheet("background-color: yellow")
-
-        cyan = QPushButton("PyQt button", self)
-        cyan.setText("=")
-        cyan.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka)
-        cyan.clicked.connect(lambda: self.zmacknutoPotvrzeni(Qt.cyan)) # Co se stane kdyz zmacknu tlacitko
-        cyan.setFont(self.font)
-        cyan.setStyleSheet("background-color: cyan")
-    """
-    zjistit jak dat enter
-    def keyPressEvent(self, event) -> None:
-        if event.key() == (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter): 
-            self.zmacknutoPotvrzeni
-    """
-
+        #Textove pole    
+        self.textove_pole = QLineEdit(self)
+        self.textove_pole.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + 3 * self.velikost_tlacitka, self.velikost_tlacitka * 2, self.velikost_tlacitka)
+        self.textove_pole.setFont(self.font)
+    
+    def vytvorTlacitko(self, tlacitko, text : str, ax : int, ay: int, aw : int, ah : int, funkce, font, styl):
+        tlacitko = QPushButton("Pyqt button", self)
+        tlacitko.setText(text)
+        tlacitko.setGeometry(ax, ay, aw, ah)
+        tlacitko.clicked.connect(funkce)
+        tlacitko.setFont(font)
+        tlacitko.setStyleSheet(styl)
+        return tlacitko
+    
     # Co se stane kdyz zmacknu priblizeni
     def priblizeni(self):
         if self.priblizeni_pocet <= 4:
@@ -149,7 +117,7 @@ class MathGraphApp(QMainWindow):
             msg.setWindowTitle("Chyba")
             msg.exec_()
 
-    def zmacknutoAC(self):
+    def zmacknutosmazani(self):
         self.vyrazy = []
         self.potvrzeni.setText("vymazani")
         self.vyhodnotVyrazy(self.vyrazy)
@@ -255,23 +223,12 @@ class MathGraphApp(QMainWindow):
     def vykresliKrivkuGrafu(self, vyraz, barva) -> None:
         pero = QPen()
         trasa = QPainterPath()
-        malovat_priste = False
         predchozi_pozice_y = None
         predchozi_v_grafu = False
-        predchozi_pozice_x = self.kraj_x
-
-
-
-
         pero.setWidth(2)
         pero.setColor(barva)
 
-        def checkifcontinus(func,x,symbol):
-            return (sp.limit(func, symbol, x).is_real)
-
         x_values = np.arange(-(self.stred_grafu_x)/self.pole_grafu, self.stred_grafu_x/self.pole_grafu, 1/100)
-        """!!! Je lepší použít tuto funkci než eval(), umožňuje mnohem více funkcí
-            Teď se tam přidává None, pokud nemá funkce v daném bodě definiční obor"""
         f = sp.lambdify(sp.Symbol("x"), vyraz, "math") 
         y_values = []
         for a in x_values:
@@ -279,18 +236,13 @@ class MathGraphApp(QMainWindow):
                 y_values.append(sp.N(f(a)))
             except ValueError:
                 # handle division by zero error
-                # leave empty for now
                 y_values.append(None)
       
-
-        """!!! Zde je přidána podmínka pro ten None, že se to v tom případě nevykresluje, pouze se to pero posouvá po ose x
-            Dále byly provedené menší úpravy, které upravují některé nedokreslování, či naopak nevyžádané čáry navíc"""
         #vytvor path pro vyraz
         #pro kazde číslo na ose
         for i in range(len(x_values)):
             # převeď normální osu na velikost grafu (vzdálenost od kraje + pulka grafu jelikoz hodnoty jsou od minus do plusu ale grafove hodnoty jsou jen od nuly do plusu + hodnota
             pozice_x = self.kraj_x + self.stred_grafu_x + (x_values[i]*self.pole_grafu)
-            # pokud hodnota y není (dělení nulou) přesuň pero
             if y_values[i] is None:
                 pozice_y = 1000
                 trasa.moveTo(pozice_x, pozice_y)
