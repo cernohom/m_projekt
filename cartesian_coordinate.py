@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 import sympy as sp
+import textwrap
 
 def safe_eval(expr):
     try:
@@ -189,23 +190,13 @@ class MathGraphApp(QMainWindow):
         self.multiTlacitko.setText(self.listTextOdstavce(self.vyrazy))
 
     def listTextOdstavce(self, list :list) -> str:
+        wrapper = textwrap.TextWrapper(width=10)
+        mezi_list = ""
         string = ""
-        pocet = 0
         for i in list:
-            pocet = 0
-            if len(i) > 10:
-                for x in i:
-                    if pocet < 10:
-                        string += x
-                        pocet += 1
-                    else:
-                        string += "\n"
-                        string += x
-                        pocet = 0
-            else:
-                string += i
-            string += "\n"
-        return string
+            mezi_list += i
+            mezi_list += "\n "
+        return wrapper.fill(text=mezi_list)
 
     def jeVGrafu (self, pozice_y):
         if self.kraj_y <= pozice_y <= (self.kraj_y + self.vyska_grafu):
@@ -261,7 +252,17 @@ class MathGraphApp(QMainWindow):
                         predchozi_v_grafu = 2
                     elif pozice_y > self.kraj_y + self.vyska_grafu:
                         trasa.lineTo(pozice_x, self.kraj_y + self.vyska_grafu)
+                        predchozi_v_grafu = 3  
+                elif predchozi_v_grafu == 2: #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
+                    if pozice_y < self.kraj_y:
+                        pass
+                    elif pozice_y > self.kraj_y + self.vyska_grafu:
                         predchozi_v_grafu = 3
+                elif predchozi_v_grafu == 3:
+                    if pozice_y > self.kraj_y + self.vyska_grafu:
+                        pass
+                    elif pozice_y < self.kraj_y:
+                        predchozi_v_grafu = 3      #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!            
                 else:
                     predchozi_v_grafu = 0
         
