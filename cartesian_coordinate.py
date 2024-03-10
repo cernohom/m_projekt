@@ -1,19 +1,10 @@
 import sys
-from PyQt5 import QtGui
 import numpy as np
-import math
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QPen, QPainterPath, QBrush, QColor
 import sympy as sp
 import textwrap
-
-def safe_eval(expr):
-    try:
-        return eval(expr)
-    except ValueError as e:
-        # Handle the exception or return a default value
-        return None
 
 class MathGraphApp(QMainWindow):
     def __init__(self):
@@ -60,18 +51,18 @@ class MathGraphApp(QMainWindow):
         #tlacitko minus
         self.vytvorTlacitko(self, "-", self.sirka_grafu + self.kraj_x, self.kraj_y, self.velikost_tlacitka, self.velikost_tlacitka, self.oddaleni, self.font, "")
         #tlacitko = cervene
-        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.zmacknutoPotvrzeni(Qt.red), self.font, "background-color: red")
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.red), self.font, "background-color: red")
         # tlacitko = zelene
-        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.zmacknutoPotvrzeni(Qt.green), self.font, "background-color: green")
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.green), self.font, "background-color: green")
         # tlaciko = zlute
-        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x, self.kraj_y + self.velikost_tlacitka, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.zmacknutoPotvrzeni(Qt.yellow), self.font, "background-color: yellow")
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x, self.kraj_y + self.velikost_tlacitka, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.yellow), self.font, "background-color: yellow")
         # tlacitko = cyan
-        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.zmacknutoPotvrzeni(Qt.cyan), self.font, "background-color: cyan")
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.cyan), self.font, "background-color: cyan")
         # Pole na vypisovani
         self.multiTlacitko = QPushButton("PyQt button", self)
         self.multiTlacitko.setText("Po zmáčknutí\nse vše smaže")
         self.multiTlacitko.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka * 4, self.velikost_tlacitka*2, self.velikost_tlacitka*6)
-        self.multiTlacitko.clicked.connect(self.zmacknutosmazani)#Co se stane kdyz zmacknu tlacitko
+        self.multiTlacitko.clicked.connect(self.smazani)#Co se stane kdyz zmacknu tlacitko
         self.multiTlacitko.setFont(QFont("Arial", 11))
         self.multiTlacitko.setStyleSheet("text-align:top")
         #Textove pole    
@@ -102,6 +93,7 @@ class MathGraphApp(QMainWindow):
             msg.setInformativeText('Je to pro bezpečnost vašeho PC')
             msg.setWindowTitle("Chyba")
             msg.exec_()
+
     # Co se stane kdyz zmacknu priblizeni
     def oddaleni(self):
         if self.priblizeni_pocet >= -4:
@@ -117,12 +109,12 @@ class MathGraphApp(QMainWindow):
             msg.setWindowTitle("Chyba")
             msg.exec_()
 
-    def zmacknutosmazani(self):
+    def smazani(self):
         self.vyrazy = []
-        self.multiTlacitko.setText("vymazani")
+        self.multiTlacitko.setText("Vymazání")
         self.vyhodnotVyrazy(self.vyrazy)
 
-    def zmacknutoPotvrzeni(self, barva):
+    def potvrzeni(self, barva):
             self.vyraz = self.textove_pole.text()
             self.vyrazy.append(self.vyraz)
             if self.obsahujeX(self.vyraz):
