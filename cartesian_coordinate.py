@@ -1,11 +1,10 @@
 import sys
-import typing
 from PyQt5 import QtGui
 import numpy as np
 import math
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
-from PyQt5.QtGui import *
+from PyQt5.QtGui import QFont, QPen, QPainterPath, QBrush, QColor
 import sympy as sp
 import textwrap
 
@@ -192,7 +191,6 @@ class MathGraphApp(QMainWindow):
     def listTextOdstavce(self, list :list) -> str:
         wrapper = textwrap.TextWrapper(width=10)
         mezi_list = ""
-        string = ""
         for i in list:
             mezi_list += i
             mezi_list += "\n "
