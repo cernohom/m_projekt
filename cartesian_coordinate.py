@@ -253,7 +253,7 @@ class MathGraphApp(QMainWindow):
                     elif pozice_y > self.kraj_y + self.vyska_grafu:
                         trasa.lineTo(pozice_x, self.kraj_y + self.vyska_grafu)
                         predchozi_v_grafu = 3  
-                elif predchozi_v_grafu == 2: #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
+                elif predchozi_v_grafu == 2:  
                     if pozice_y < self.kraj_y:
                         pass
                     elif pozice_y > self.kraj_y + self.vyska_grafu:
@@ -262,10 +262,9 @@ class MathGraphApp(QMainWindow):
                     if pozice_y > self.kraj_y + self.vyska_grafu:
                         pass
                     elif pozice_y < self.kraj_y:
-                        predchozi_v_grafu = 3      #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!            
+                        predchozi_v_grafu = 3            
                 else:
                     predchozi_v_grafu = 0
-        
         graph_item = QGraphicsPathItem(trasa)
         graph_item.setPen(pero)
         self.scene.addItem(graph_item)
