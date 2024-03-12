@@ -33,6 +33,9 @@ class MathGraphApp(QMainWindow):
         self.vyrazy_barvy = {}
         self.font = QFont("Arial", 15)
         self.priblizeni_pocet = 0
+        self.barva_pozadi = Qt.GlobalColor.white
+        self.barva_mrizi = Qt.GlobalColor.black
+        self.darkmode = False
 
         # vypocitani hodnot aby se nepocitaly pokazde
         self.stred_grafu_x = self.sirka_grafu/2 #prostredek grafu na ose x
@@ -46,6 +49,7 @@ class MathGraphApp(QMainWindow):
         self.vykresliKartezskouSoustavu()
 
     def UiComponents(self):
+        self.vytvorTlacitko(self, "MODE", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y - self.velikost_tlacitka, self.velikost_tlacitka*2, self.velikost_tlacitka, self.changeMode, self.font, "")
         #tlacitko plus
         self.vytvorTlacitko(self, "+", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y, self.velikost_tlacitka, self.velikost_tlacitka, self.priblizeni, self.font, "")
         #tlacitko minus
@@ -79,6 +83,17 @@ class MathGraphApp(QMainWindow):
         tlacitko.setStyleSheet(styl)
         return tlacitko
     
+    def changeMode(self) -> None:
+        if self.darkmode == True:
+            self.barva_pozadi = Qt.GlobalColor.white
+            self.barva_mrizi = Qt.GlobalColor.black
+            self.darkmode = False
+        else:
+            self.barva_pozadi = Qt.GlobalColor.black
+            self.barva_mrizi = Qt.GlobalColor.white
+            self.darkmode = True
+        self.vyhodnotVyrazy(self.vyrazy)
+
     # Co se stane kdyz zmacknu priblizeni
     def priblizeni(self):
         if self.priblizeni_pocet <= 4:
@@ -132,14 +147,15 @@ class MathGraphApp(QMainWindow):
         trasa_pozadi = QPainterPath()
         trasa_os = QPainterPath()
 
-        self.vykresliPozadi(trasa_pozadi, pero)
-        self.vykresliMriz(trasa_mrizi, pero)
+        self.vykresliPozadi(trasa_pozadi, pero, self.barva_pozadi)
+        self.vykresliMriz(trasa_mrizi, pero, self.barva_mrizi)
         self.vykresliOsy(trasa_os,pero)
     
     def vyhodnotVyrazy(self, vyrazy : list):
         if not vyrazy:
             self.vykresliKartezskouSoustavu()
         else:
+            self.vykresliKartezskouSoustavu
             for vyraz in vyrazy:
                 
                 if self.obsahujeX(vyraz):
@@ -265,8 +281,8 @@ class MathGraphApp(QMainWindow):
                 return True
         return False
     
-    def vykresliMriz(self, trasa, pero):
-        pero.setColor(Qt.black)
+    def vykresliMriz(self, trasa, pero, barva):
+        pero.setColor(barva)
         pero.setWidth(1)
         # Vytvoreni hodnot na ose x a samotnych vertikalnich os do prvni pulky
         for i  in np.arange (self.stred_grafu_x, self.sirka_grafu, 50) :
@@ -279,6 +295,7 @@ class MathGraphApp(QMainWindow):
                 pocet_zaokrouhlenych_mist = 1
             
             x_popisek = QGraphicsTextItem(str(round(x_popisek_text, pocet_zaokrouhlenych_mist))) # Zaokrouhleni a nasledne vytvoreni popisku osy
+            x_popisek.setDefaultTextColor(barva)
             x_popisek.setPos(self.pozice_pera_x, self.kraj_y + self.stred_grafu_y)
             self.scene.addItem(x_popisek)
 
@@ -302,6 +319,7 @@ class MathGraphApp(QMainWindow):
             else:
                 pocet_zaokrouhlenych_mist = 1   
             x_popisek = QGraphicsTextItem(str (round (x_popisek_text, pocet_zaokrouhlenych_mist)))
+            x_popisek.setDefaultTextColor(barva)
             x_popisek.setPos(self.kraj_x + i, self.kraj_y + self.stred_grafu_y)
             self.scene.addItem(x_popisek)
             # Zacni ve stredu a udelej caru dolu
@@ -323,6 +341,7 @@ class MathGraphApp(QMainWindow):
                 round(y_popisek_text, 1)
             y_popisek = QGraphicsTextItem(str (round (y_popisek_text, pocet_zaokrouhlenych_mist)))
             y_popisek.setPos(self.kraj_x + self.stred_grafu_x, self.kraj_y + i)
+            y_popisek.setDefaultTextColor(barva)
             self.scene.addItem(y_popisek)
             if i == 0:
                 trasa.moveTo(self.kraj_x,self.kraj_y)
@@ -340,6 +359,7 @@ class MathGraphApp(QMainWindow):
                 round(y_popisek_text, 1)
             y_popisek = QGraphicsTextItem(str (round (y_popisek_text, pocet_zaokrouhlenych_mist)))
             y_popisek.setPos(self.kraj_x + self.stred_grafu_x, self.kraj_y + i)
+            y_popisek.setDefaultTextColor(barva)
             self.scene.addItem(y_popisek)
             if i == 0:
                 trasa.moveTo(self.kraj_x,self.kraj_y)
@@ -354,11 +374,11 @@ class MathGraphApp(QMainWindow):
         polozka_grafu.setPen(pero)
         self.scene.addItem(polozka_grafu)
         
-    def vykresliPozadi(self, trasa, pero):
+    def vykresliPozadi(self, trasa, pero, barva):
         trasa.addRect(self.kraj_x, self.kraj_y, self.sirka_grafu, self.vyska_grafu)
         polozka_grafu = QGraphicsPathItem(trasa)
         polozka_grafu.setPen(pero)
-        polozka_grafu.setBrush(QBrush(QColor(Qt.white)))
+        polozka_grafu.setBrush(QBrush(QColor(barva)))
         self.scene.addItem(polozka_grafu)
 
     def vykresliOsy(self, trasa, pero):
