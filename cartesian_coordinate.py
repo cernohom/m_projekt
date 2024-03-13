@@ -155,7 +155,7 @@ class MathGraphApp(QMainWindow):
         if not vyrazy:
             self.vykresliKartezskouSoustavu()
         else:
-            self.vykresliKartezskouSoustavu
+            self.vykresliKartezskouSoustavu()
             for vyraz in vyrazy:
                 
                 if self.obsahujeX(vyraz):
