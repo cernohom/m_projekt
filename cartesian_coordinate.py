@@ -55,23 +55,27 @@ class MathGraphApp(QMainWindow):
         #tlacitko minus
         self.vytvorTlacitko(self, "-", self.sirka_grafu + self.kraj_x, self.kraj_y, self.velikost_tlacitka, self.velikost_tlacitka, self.oddaleni, self.font, "")
         #tlacitko = cervene
-        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.red), self.font, "background-color: red")
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka,  self.kraj_y + self.velikost_tlacitka * 4, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.red), self.font, "background-color: red")
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x,  self.kraj_y + self.velikost_tlacitka * 4, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.darkRed), self.font, "background-color: darkRed")
         # tlacitko = zelene
-        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.green), self.font, "background-color: green")
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x , self.kraj_y + self.velikost_tlacitka * 3, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.darkGreen), self.font, "background-color: darkGreen")
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka * 3, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.green), self.font, "background-color: green")
         # tlaciko = zlute
-        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x, self.kraj_y + self.velikost_tlacitka, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.yellow), self.font, "background-color: yellow")
-        # tlacitko = cyan
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.magenta), self.font, "background-color: magenta")
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x, self.kraj_y + self.velikost_tlacitka, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.darkMagenta), self.font, "background-color: darkMagenta")
+        # tlacitko = cyan a darkCyan
         self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.cyan), self.font, "background-color: cyan")
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x ,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.darkCyan), self.font, "background-color: darkCyan")
         # Pole na vypisovani
         self.multiTlacitko = QPushButton("PyQt button", self)
         self.multiTlacitko.setText("Po zmáčknutí\nse vše smaže")
-        self.multiTlacitko.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka * 4, self.velikost_tlacitka*2, self.velikost_tlacitka*6)
+        self.multiTlacitko.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka * 6, self.velikost_tlacitka*2, self.velikost_tlacitka*6)
         self.multiTlacitko.clicked.connect(self.smazani)#Co se stane kdyz zmacknu tlacitko
         self.multiTlacitko.setFont(QFont("Arial", 11))
         self.multiTlacitko.setStyleSheet("text-align:top")
         #Textove pole    
         self.textove_pole = QLineEdit(self)
-        self.textove_pole.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + 3 * self.velikost_tlacitka, self.velikost_tlacitka * 2, self.velikost_tlacitka)
+        self.textove_pole.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka * 5, self.velikost_tlacitka * 2, self.velikost_tlacitka)
         self.textove_pole.setFont(self.font)
     
     def vytvorTlacitko(self, tlacitko, text : str, ax : int, ay: int, aw : int, ah : int, funkce, font, styl):
@@ -383,7 +387,7 @@ class MathGraphApp(QMainWindow):
 
     def vykresliOsy(self, trasa, pero):
 
-        pero.setWidth(2)
+        pero.setWidth(3)
         pero.setColor(Qt.darkBlue)
         trasa.moveTo(self.kraj_x + self.stred_grafu_x, self.kraj_y)
         trasa.lineTo(self.kraj_x + self.stred_grafu_x, self.kraj_y + self.vyska_grafu)
