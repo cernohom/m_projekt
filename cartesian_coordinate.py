@@ -89,7 +89,7 @@ class MathGraphApp(QMainWindow):
         return tlacitko
     
     def changeMode(self) -> None:
-        if self.darkmode == True:
+        if self.darkmode:
             self.barva_pozadi = Qt.GlobalColor.white
             self.barva_mrizi = Qt.GlobalColor.black
             self.darkmode = False
@@ -239,7 +239,6 @@ class MathGraphApp(QMainWindow):
                 predchozi_v_grafu = 0
             else:    
                 pozice_y = self.kraj_y + self.stred_grafu_y - (y_hodnoty[i] * self.pole_grafu) # vytvor y od kraje grafu pulka + pul
-                
                 if self.jeVGrafu(pozice_y):
                     if predchozi_v_grafu == 0:
                         trasa.moveTo(pozice_x, pozice_y)
