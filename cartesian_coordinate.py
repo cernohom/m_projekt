@@ -219,27 +219,27 @@ class MathGraphApp(QMainWindow):
         pero.setWidth(2)
         pero.setColor(barva)
 
-        x_values = np.arange(-(self.stred_grafu_x)/self.pole_grafu, self.stred_grafu_x/self.pole_grafu, 1/100)
+        x_hodnoty = np.arange(-(self.stred_grafu_x)/self.pole_grafu, self.stred_grafu_x/self.pole_grafu, 1/100)
         f = sp.lambdify(sp.Symbol("x"), vyraz, "math") 
-        y_values = []
-        for a in x_values:
+        y_hodnoty = []
+        for a in x_hodnoty:
             try:
-                y_values.append(sp.N(f(a)))
+                y_hodnoty.append(sp.N(f(a)))
             except ValueError:
                 # handle division by zero error
-                y_values.append(None)
+                y_hodnoty.append(None)
       
         #vytvor path pro vyraz
         #pro kazde číslo na ose
-        for i in range(len(x_values)):
+        for i in range(len(x_hodnoty)):
             # převeď normální osu na velikost grafu (vzdálenost od kraje + pulka grafu jelikoz hodnoty jsou od minus do plusu ale grafove hodnoty jsou jen od nuly do plusu + hodnota
-            pozice_x = self.kraj_x + self.stred_grafu_x + (x_values[i]*self.pole_grafu)
-            if y_values[i] is None:
+            pozice_x = self.kraj_x + self.stred_grafu_x + (x_hodnoty[i]*self.pole_grafu)
+            if y_hodnoty[i] is None:
                 pozice_y = 1000
                 trasa.moveTo(pozice_x, pozice_y)
                 predchozi_v_grafu = 0
             else:    
-                pozice_y = self.kraj_y + self.stred_grafu_y - (y_values[i] * self.pole_grafu) # vytvor y od kraje grafu pulka + pul
+                pozice_y = self.kraj_y + self.stred_grafu_y - (y_hodnoty[i] * self.pole_grafu) # vytvor y od kraje grafu pulka + pul
                 
                 if self.jeVGrafu(pozice_y):
                     if predchozi_v_grafu == 0:
