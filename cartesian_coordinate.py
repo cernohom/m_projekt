@@ -302,17 +302,9 @@ class MathGraphApp(QMainWindow):
             x_popisek.setDefaultTextColor(barva)
             x_popisek.setPos(self.pozice_pera_x, self.kraj_y + self.stred_grafu_y)
             self.scene.addItem(x_popisek)
-
-            # Prvni caru zacni v levem hornim rohu a udelej caru dolu
-            if i == 0:
-                trasa.moveTo(self.kraj_x,self.kraj_y)
-                trasa.lineTo(self.kraj_x, self.vyska_grafu + self.kraj_y)
-            
-            # Presun nahoru posun o jedno policko a udelej caru dolu
-            else:
-                trasa.moveTo(self.pozice_pera_x, self.kraj_y)
-                trasa.lineTo(self.pozice_pera_x, self.vyska_grafu + self.kraj_y)
-        
+            trasa.moveTo(self.pozice_pera_x, self.kraj_y)
+            trasa.lineTo(self.pozice_pera_x, self.vyska_grafu + self.kraj_y)
+    
         pocet_zaokrouhlenych_mist = 1
 
         # Vytvoreni hodnot na ose y a samotnych vertikalnich os
@@ -327,14 +319,9 @@ class MathGraphApp(QMainWindow):
             x_popisek.setPos(self.kraj_x + i, self.kraj_y + self.stred_grafu_y)
             self.scene.addItem(x_popisek)
             # Zacni ve stredu a udelej caru dolu
-            if i == 0:
-                trasa.moveTo(self.kraj_x,self.kraj_y)
-                trasa.lineTo(self.kraj_x, self.vyska_grafu + self.kraj_y)
-            # Presun nahoru do noveho pole a udelej caru dolu
-            else:
-                self.pozice_pera_x = self.kraj_x + i
-                trasa.moveTo(self.pozice_pera_x, self.kraj_y)
-                trasa.lineTo(self.pozice_pera_x, self.vyska_grafu + self.kraj_y)    
+            self.pozice_pera_x = self.kraj_x + i
+            trasa.moveTo(self.pozice_pera_x, self.kraj_y)
+            trasa.lineTo(self.pozice_pera_x, self.vyska_grafu + self.kraj_y)    
 
         # Horizontalni cary
         for i  in np.arange (self.stred_grafu_y + self.kraj_y - 50, self.vyska_grafu, 50) :
@@ -347,13 +334,9 @@ class MathGraphApp(QMainWindow):
             y_popisek.setPos(self.kraj_x + self.stred_grafu_x, self.kraj_y + i)
             y_popisek.setDefaultTextColor(barva)
             self.scene.addItem(y_popisek)
-            if i == 0:
-                trasa.moveTo(self.kraj_x,self.kraj_y)
-                trasa.lineTo(self.sirka_grafu + self.kraj_x, self.kraj_y)
-            else:
-                self.graph_y_pen = self.kraj_y + i
-                trasa.moveTo(self.kraj_x, self.graph_y_pen)
-                trasa.lineTo(self.sirka_grafu + self.kraj_x, self.graph_y_pen)
+            self.graph_y_pen = self.kraj_y + i
+            trasa.moveTo(self.kraj_x, self.graph_y_pen)
+            trasa.lineTo(self.sirka_grafu + self.kraj_x, self.graph_y_pen)
 
         for i  in reversed(np.arange (self.kraj_y - 50, self.stred_grafu_y, 50)) :
             y_popisek_text = (i - self.stred_grafu_y) / self.pole_grafu * - 1
@@ -365,14 +348,10 @@ class MathGraphApp(QMainWindow):
             y_popisek.setPos(self.kraj_x + self.stred_grafu_x, self.kraj_y + i)
             y_popisek.setDefaultTextColor(barva)
             self.scene.addItem(y_popisek)
-            if i == 0:
-                trasa.moveTo(self.kraj_x,self.kraj_y)
-                trasa.lineTo(self.sirka_grafu + self.kraj_x, self.kraj_y)
-            else:
-                self.graph_y_pen = self.kraj_y + i
-                trasa.moveTo(self.kraj_x, self.graph_y_pen)
-                trasa.lineTo(self.sirka_grafu + self.kraj_x, self.graph_y_pen)
-        
+            self.graph_y_pen = self.kraj_y + i
+            trasa.moveTo(self.kraj_x, self.graph_y_pen)
+            trasa.lineTo(self.sirka_grafu + self.kraj_x, self.graph_y_pen)
+    
         # Create a QGraphicsPathItem to display the graph
         polozka_grafu = QGraphicsPathItem(trasa)
         polozka_grafu.setPen(pero)
