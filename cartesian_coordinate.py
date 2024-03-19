@@ -214,7 +214,6 @@ class MathGraphApp(QMainWindow):
     def vykresliKrivkuGrafu(self, vyraz, barva) -> None:
         pero = QPen()
         trasa = QPainterPath()
-        predchozi_pozice_y = None
         predchozi_v_grafu = 0 # Pokud byla None 0, pokud v 1, pokud nad 2 a pokud pod 3
         pero.setWidth(2)
         pero.setColor(barva)
