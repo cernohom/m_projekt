@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+import math
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QPen, QPainterPath, QBrush, QColor
@@ -156,48 +157,44 @@ class MathGraphApp(QMainWindow):
         self.vykresliOsy(trasa_os,pero)
     
     def vyhodnotVyrazy(self, vyrazy : list):
-        if not vyrazy:
-            self.vykresliKartezskouSoustavu()
-        else:
-            self.vykresliKartezskouSoustavu()
-            for vyraz in vyrazy:
-                
-                if self.obsahujeX(vyraz):
-                    self.barva = self.vyrazy_barvy[vyraz]
+        self.vykresliKartezskouSoustavu()
+        for vyraz in vyrazy:  
+            if self.obsahujeX(vyraz):
+                self.barva = self.vyrazy_barvy[vyraz]
+                try:
+                    self.vykresliKrivkuGrafu(vyraz, self.barva)
+                except:
+                    self.vyrazy.remove(vyraz)
+                    msg = QMessageBox()
+                    msg.setIcon(QMessageBox.Critical)
+                    msg.setText("Nelze vyhodnotit vloženou hodnotu")
+                    msg.setWindowTitle("Chyba")
+                    msg.exec_()
+            else:
+                if vyraz not in self.vyrazy_jednoduche:      
                     try:
-                        self.vykresliKrivkuGrafu(vyraz, self.barva)
-                    except:
+                        vysledek = eval(vyraz)
                         self.vyrazy.remove(vyraz)
-                        msg = QMessageBox()
-                        msg.setIcon(QMessageBox.Critical)
-                        msg.setText("Nelze vyhodnotit vloženou hodnotu")
-                        msg.setWindowTitle("Chyba")
-                        msg.exec_()
-                else:
-                    if vyraz not in self.vyrazy_jednoduche:      
-                        try:
-                            vysledek = eval(vyraz)
-                            self.vyrazy.remove(vyraz)
-                            vysledek  = round(vysledek, 3)
-                            self.novy_vyraz = str(vyraz) + " = " + str(vysledek)
-                            self.vyrazy.append(self.novy_vyraz)
-                            self.vyrazy_jednoduche.append(self.novy_vyraz)
-                        except:
-                                try:
-                                    novy_vyraz = "math." + str(vyraz)
-                                    vysledek = eval(novy_vyraz)
-                                    vysledek  = round(vysledek, 3)
-                                    self.vyrazy.remove(vyraz)
-                                    self.novy_vyraz = str(vyraz) + " = " + str(vysledek)
-                                    self.vyrazy.append(self.novy_vyraz)
-                                    self.vyrazy_jednoduche.append(self.novy_vyraz)
-                                except:
-                                    self.vyrazy.remove(vyraz)
-                                    msg = QMessageBox()
-                                    msg.setIcon(QMessageBox.Critical)
-                                    msg.setText("Nelze vyhodnotit vloženou hodnotu")
-                                    msg.setWindowTitle("Chyba")
-                                    msg.exec_()
+                        vysledek  = round(vysledek, 3)
+                        self.novy_vyraz = str(vyraz) + " = " + str(vysledek)
+                        self.vyrazy.append(self.novy_vyraz)
+                        self.vyrazy_jednoduche.append(self.novy_vyraz)
+                    except:
+                            try:
+                                novy_vyraz = "math." + str(vyraz)
+                                vysledek = eval(novy_vyraz)
+                                vysledek  = round(vysledek, 3)
+                                self.vyrazy.remove(vyraz)
+                                self.novy_vyraz = str(vyraz) + " = " + str(vysledek)
+                                self.vyrazy.append(self.novy_vyraz)
+                                self.vyrazy_jednoduche.append(self.novy_vyraz)
+                            except:
+                                self.vyrazy.remove(vyraz)
+                                msg = QMessageBox()
+                                msg.setIcon(QMessageBox.Critical)
+                                msg.setText("Nelze vyhodnotit vloženou hodnotu")
+                                msg.setWindowTitle("Chyba")
+                                msg.exec_()
         self.multiTlacitko.setText(self.listTextOdstavce(self.vyrazy))
 
     def listTextOdstavce(self, list :list) -> str:
