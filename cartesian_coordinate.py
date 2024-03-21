@@ -92,7 +92,6 @@ class MathGraphApp(QMainWindow):
     # Funkce na změnu módu
     def changeMode(self) -> None:
         if self.darkmode:
-        if self.darkmode:
             self.barva_pozadi = Qt.GlobalColor.white
             self.barva_mrizi = Qt.GlobalColor.black
             self.darkmode = False
