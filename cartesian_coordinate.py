@@ -11,30 +11,30 @@ class MathGraphApp(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         
-        # Inicializování listů a slovníků
-        self.vyrazy = []
-        self.vyrazy_jednoduche = []
-        self.vyrazy_barvy = {}
+        # Inicializace listů a slovníků pro uchování výrazů a jejich nastavení
+        self.vyrazy : list = []  # Seznam výrazů
+        self.vyrazy_jednoduche : list = []  # Seznam jednoduchých vyhodnocených výrazů
+        self.vyrazy_barvy : dict[str, Qt.GlobalColor] = {}  # Slovník pro ukládání barev pro každý výraz
         self.initUI()
 
     def initUI(self) -> None:
-        # Hodnoty pro graf
-        self.pole_grafu = 50
-        self.sirka_grafu = 1200
-        self.vyska_grafu = 800
-        self.kraj_x = 100
-        self.kraj_y = 100
-        self.velikost_tlacitka = 50
-        self.sila_priblizeni = 50
-        self.font = QFont("Arial", 15)
-        self.priblizeni_pocet = 0
-        self.barva_pozadi = Qt.GlobalColor.white
-        self.barva_mrizi = Qt.GlobalColor.black
-        self.darkmode = False
+        # Nastavení hodnot pro graf
+        self.pole_grafu : float = 50  # Velikost pole grafu
+        self.sirka_grafu : int = 1200  # Šířka grafu
+        self.vyska_grafu : int = 800  # Výška grafu
+        self.kraj_x : int = 100  # Okraj x
+        self.kraj_y : int = 100  # Okraj y
+        self.velikost_tlacitka : int = 50  # Velikost tlačítek
+        self.sila_priblizeni : int = 50  # Zvětšení nebo zmenšení grafu při přiblížení nebo oddálení
+        self.font_textu = QFont("Arial", 15)  # Font pro text
+        self.priblizeni_pocet : float = 0  # Počet přiblížení nebo oddálení
+        self.barva_pozadi = Qt.GlobalColor.white  # Barva pozadí
+        self.barva_mrizi = Qt.GlobalColor.black  # Barva mřížky
+        self.darkmode = False  # Režim tmavého módu
 
-        # Vypočítání hodnot aby se nepočítaly pokaždé
-        self.stred_grafu_x = self.sirka_grafu/2
-        self.stred_grafu_y = self.vyska_grafu/2        
+        # Vypočítání středu grafu
+        self.stred_grafu_x = self.sirka_grafu / 2
+        self.stred_grafu_y = self.vyska_grafu / 2        
         
         # Nastavení okna
         self.view = QGraphicsView(self)
@@ -43,30 +43,28 @@ class MathGraphApp(QMainWindow):
         self.scene = QGraphicsScene(self)
         self.view.setScene(self.scene)
         self.setWindowTitle('Grafická kalkulačka')
-        self.setGeometry(100, 100, self.sirka_grafu + 200,self.vyska_grafu + 200)
+        self.setGeometry(100, 100, self.sirka_grafu + 200, self.vyska_grafu + 200)
         self.UiComponents()
         self.vykresliKartezskouSoustavu()
     
-    # Funkce na vytváření komponentů okna
-    def UiComponents(self):
-        # Tlačítko mode
-        self.vytvorTlacitko(self, "MODE", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y - self.velikost_tlacitka, self.velikost_tlacitka*2, self.velikost_tlacitka, self.changeMode, self.font, "")
-        # Tlačítko plus
-        self.vytvorTlacitko(self, "+", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y, self.velikost_tlacitka, self.velikost_tlacitka, self.priblizeni, self.font, "")
-        # Tlačítko mínus
-        self.vytvorTlacitko(self, "-", self.sirka_grafu + self.kraj_x, self.kraj_y, self.velikost_tlacitka, self.velikost_tlacitka, self.oddaleni, self.font, "")
-        # Tlačítka červená
-        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka,  self.kraj_y + self.velikost_tlacitka * 4, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.red), self.font, "background-color: red")
-        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x,  self.kraj_y + self.velikost_tlacitka * 4, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.darkRed), self.font, "background-color: darkRed")
-        # Tlačítka zelená
-        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x , self.kraj_y + self.velikost_tlacitka * 3, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.darkGreen), self.font, "background-color: darkGreen")
-        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka * 3, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.green), self.font, "background-color: green")
-        # Tlačítka žlutá
-        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.magenta), self.font, "background-color: magenta")
-        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x, self.kraj_y + self.velikost_tlacitka, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.darkMagenta), self.font, "background-color: darkMagenta")
-        # Tlačítka cyanová
-        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.cyan), self.font, "background-color: cyan")
-        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x ,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.darkCyan), self.font, "background-color: darkCyan")
+    # Funkce na vytváření komponent okna
+    def UiComponents(self) -> None:
+        # Tlačítko MODE pro změnu módu (světlý/tmavý)
+        self.vytvorTlacitko(self, "MODE", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y - self.velikost_tlacitka, self.velikost_tlacitka*2, self.velikost_tlacitka, self.changeMode, self.font_textu, "")
+
+        # Tlačítka pro přiblížení a oddálení
+        self.vytvorTlacitko(self, "+", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y, self.velikost_tlacitka, self.velikost_tlacitka, self.priblizeni, self.font_textu, "")
+        self.vytvorTlacitko(self, "-", self.sirka_grafu + self.kraj_x, self.kraj_y, self.velikost_tlacitka, self.velikost_tlacitka, self.oddaleni, self.font_textu, "")
+
+        # Tlačítka pro volbu barev
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka,  self.kraj_y + self.velikost_tlacitka * 4, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.GlobalColor.red), self.font_textu, "background-color: red")
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x,  self.kraj_y + self.velikost_tlacitka * 4, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.GlobalColor.darkRed), self.font_textu, "background-color: darkRed")
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x , self.kraj_y + self.velikost_tlacitka * 3, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.GlobalColor.darkGreen), self.font_textu, "background-color: darkGreen")
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka * 3, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.GlobalColor.green), self.font_textu, "background-color: green")
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.GlobalColor.magenta), self.font_textu, "background-color: magenta")
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x, self.kraj_y + self.velikost_tlacitka, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.GlobalColor.darkMagenta), self.font_textu, "background-color: darkMagenta")
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.GlobalColor.cyan), self.font_textu, "background-color: cyan")
+        self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x ,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.GlobalColor.darkCyan), self.font_textu, "background-color: darkCyan")
         # Pole na vypisovani
         self.multiTlacitko = QPushButton("PyQt button", self)
         self.multiTlacitko.setText("Po zmáčknutí\nse vše smaže")
@@ -77,19 +75,30 @@ class MathGraphApp(QMainWindow):
         #Textove pole    
         self.textove_pole = QLineEdit(self)
         self.textove_pole.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka * 5, self.velikost_tlacitka * 2, self.velikost_tlacitka)
-        self.textove_pole.setFont(self.font)
+        self.textove_pole.setFont(self.font_textu)
     
-    # Funkce na efektivní vytváření tlačítka 
-    def vytvorTlacitko(self, tlacitko, text : str, ax : int, ay: int, aw : int, ah : int, funkce, font, styl):
-        tlacitko = QPushButton("Pyqt button", self)
-        tlacitko.setText(text)
+    # Vytvoření tlačítka s danými vlastnostmi 
+    def vytvorTlacitko(self, tlacitko, text : str, ax : int, ay: int, aw : int, ah : int, funkce, font, styl : str) -> QPushButton:
+        """
+        Parametry:
+            text (str): Text na tlačítku.
+            ax (int): X-ová souřadnice tlačítka.
+            ay (int): Y-ová souřadnice tlačítka.
+            aw (int): Šířka tlačítka.
+            ah (int): Výška tlačítka.
+            funkce: Funkce, která se má spustit po stisknutí tlačítka.
+            font (QFont): Font textu na tlačítku.
+            styl (str): Styl tlačítka (volitelné).
+        """
+        tlacitko = QPushButton(text, self)
         tlacitko.setGeometry(ax, ay, aw, ah)
-        tlacitko.clicked.connect(funkce)
         tlacitko.setFont(font)
-        tlacitko.setStyleSheet(styl)
+        tlacitko.clicked.connect(funkce)
+        if styl:
+            tlacitko.setStyleSheet(styl)
         return tlacitko
     
-    # Funkce na změnu módu
+    # Změna módu aplikace (světlý/temný režim).
     def changeMode(self) -> None:
         if self.darkmode:
             self.barva_pozadi = Qt.GlobalColor.white
@@ -101,7 +110,7 @@ class MathGraphApp(QMainWindow):
             self.darkmode = True
         self.vyhodnotVyrazy(self.vyrazy)
 
-    # Co se stane když zmáčknu přiblížení
+    # Přiblížení grafu
     def priblizeni(self) -> None:
         if self.priblizeni_pocet <= 4:
             self.pole_grafu = self.pole_grafu * 2
@@ -120,23 +129,26 @@ class MathGraphApp(QMainWindow):
             self.priblizeni_pocet -= 1
         else:
             self.vytvorChyboveOkno("Více nelze oddálit")
-
+    
+    # Smazání všech dříve zadaných výrazů
     def smazani(self) -> None:
         self.vyrazy = []
         self.multiTlacitko.setText("Vymazání")
         self.vyhodnotVyrazy(self.vyrazy)
-
-    def potvrzeni(self, barva : QColor) -> None:
+    
+    # Potvrzení vloženého výrazu
+    def potvrzeni(self, barva : Qt.GlobalColor) -> None:
             self.vyraz = self.textove_pole.text()
             self.vyrazy.append(self.vyraz)
             if self.obsahujeX(self.vyraz):
                 self.vyrazy_barvy[self.vyraz] = barva
             self.vyhodnotVyrazy(self.vyrazy)
 
+    # Vykreslení kartézské soustavy
     def vykresliKartezskouSoustavu(self) -> None:
         # Vytvoření pera
         pero = QPen()
-        pero.setColor(Qt.red)
+        pero.setColor(Qt.GlobalColor.red)
         pero.setWidth(2)
 
         # Vytváření tras pro pera
@@ -147,79 +159,40 @@ class MathGraphApp(QMainWindow):
         self.vykresliPozadi(trasa_pozadi, pero, self.barva_pozadi)
         self.vykresliMriz(trasa_mrizi, pero, self.barva_mrizi)
         self.vykresliOsy(trasa_os,pero)
-    
-    def vyhodnotVyrazy(self, vyrazy : list):
-        self.vykresliKartezskouSoustavu()
-        for vyraz in vyrazy:  
-            if self.obsahujeX(vyraz):
-                self.barva = self.vyrazy_barvy[vyraz]
-                try:
-                    self.vykresliKrivkuGrafu(vyraz, self.barva)
-                except:
-                    self.vyrazy.remove(vyraz)
-                    msg = QMessageBox()
-                    msg.setIcon(QMessageBox.Critical)
-                    msg.setText("Nelze vyhodnotit vloženou hodnotu")
-                    msg.setWindowTitle("Chyba")
-                    msg.exec_()
-            else:
-                if vyraz not in self.vyrazy_jednoduche:      
-                    try:
-                        vysledek = eval(vyraz)
-                        self.vyrazy.remove(vyraz)
-                        vysledek  = round(vysledek, 3)
-                        self.novy_vyraz = str(vyraz) + " = " + str(vysledek)
-                        self.vyrazy.append(self.novy_vyraz)
-                        self.vyrazy_jednoduche.append(self.novy_vyraz)
-                    except:
-                            try:
-                                novy_vyraz = "math." + str(vyraz)
-                                vysledek = eval(novy_vyraz)
-                                vysledek  = round(vysledek, 3)
-                                self.vyrazy.remove(vyraz)
-                                self.novy_vyraz = str(vyraz) + " = " + str(vysledek)
-                                self.vyrazy.append(self.novy_vyraz)
-                                self.vyrazy_jednoduche.append(self.novy_vyraz)
-                            except:
-                                self.vyrazy.remove(vyraz)
-                                msg = QMessageBox()
-                                msg.setIcon(QMessageBox.Critical)
-                                msg.setText("Nelze vyhodnotit vloženou hodnotu")
-                                msg.setWindowTitle("Chyba")
-                                msg.exec_()
-        self.multiTlacitko.setText(self.listTextOdstavce(self.vyrazy))
-    def vyhodnotVyrazy(self, vyrazy : list) -> None:
-        self.vykresliKartezskouSoustavu()
-        for vyraz in vyrazy:    
-            if self.obsahujeX(vyraz):
-                self.barva = self.vyrazy_barvy[vyraz]
-                try:
-                    self.vykresliKrivkuGrafu(vyraz, self.barva)
-                except:
-                    self.vytvorChyboveOkno("Nelze vyhodnotit vloženou hodnotu")
-            else:
-                if vyraz not in self.vyrazy_jednoduche:      
-                    try:
-                        vysledek = eval(vyraz)
-                        self.vyrazy.remove(vyraz)
-                        self.novy_vyraz = str(vyraz) + " = " + str(round(vysledek, 3))
-                        self.vyrazy.append(self.novy_vyraz)
-                        self.vyrazy_jednoduche.append(self.novy_vyraz)
-                    except:
-                            try:
-                                novy_vyraz = "math." + str(vyraz)
-                                vysledek = eval(novy_vyraz)
-                                vysledek  = round(vysledek, 3)
-                                self.vyrazy.remove(vyraz)
-                                self.novy_vyraz = str(vyraz) + " = " + str(vysledek)
-                                self.vyrazy.append(self.novy_vyraz)
-                                self.vyrazy_jednoduche.append(self.novy_vyraz)
-                            except:
-                                self.vytvorChyboveOkno("Nelze vyhodnotit vloženou hodnotu")
-                                self.vyrazy.remove(vyraz)
 
-        self.multiTlacitko.setText(self.listTextNaOdstavce(self.vyrazy))
+    # Vyhodnocení a zobrazení všech výrazů
+    def vyhodnotVyrazy(self, vyrazy: list) -> None:
+        self.vykresliKartezskouSoustavu()  # Vyresetování vykreslení kartézské soustavy
+        for vyraz in vyrazy:  # Procházení všech výrazů
+            if self.obsahujeX(vyraz):  # Pokud výraz obsahuje proměnnou x
+                self.barva = self.vyrazy_barvy[vyraz]  # Získání barvy výrazu
+                try:
+                    self.vykresliKrivkuGrafu(vyraz, self.barva)  # Vykreslení křivky grafu v dané barvě
+                except:
+                    self.vytvorChyboveOkno("Nelze vyhodnotit vloženou hodnotu")  # Pokud se nepodaří vyhodnotit výraz, zobrazí se chybové okno
+            else:  # Pokud výraz neobsahuje proměnnou x
+                if vyraz not in self.vyrazy_jednoduche:  # Pokud výraz není již vyhodnocen
+                    try:
+                        vysledek = eval(vyraz)  # Vyhodnocení výrazu
+                        self.vyrazy.remove(vyraz)  # Odebrání nevyhodnoceného výrazu
+                        self.novy_vyraz = str(vyraz) + " = " + str(round(vysledek, 3))  # Vytvoření nového výrazu s výsledkem
+                        self.vyrazy.append(self.novy_vyraz)  # Přidání nového výrazu do seznamu výrazů
+                        self.vyrazy_jednoduche.append(self.novy_vyraz)  # Přidání nového výrazu do seznamu již jednoduše vyhodnocených výrazů
+                    except:
+                        try:
+                            novy_vyraz = "math." + str(vyraz)  # Přidání matematického prefixu k výrazu
+                            vysledek = eval(novy_vyraz)  # Vyhodnocení výrazu
+                            vysledek = round(vysledek, 3)  # Zaokrouhlení výsledku
+                            self.vyrazy.remove(vyraz)  # Odebrání vyhodnoceného výrazu
+                            self.novy_vyraz = str(vyraz) + " = " + str(vysledek)  # Vytvoření nového řetězce s výsledkem
+                            self.vyrazy.append(self.novy_vyraz)  # Přidání nového řetězce do seznamu výrazů
+                            self.vyrazy_jednoduche.append(self.novy_vyraz)  # Přidání nového řetězce do seznamu již jednoduše vyhodnocených výrazů
+                        except:
+                            self.vyrazy.remove(vyraz)  # Odebrání výrazu, který nelze vyhodnotit
+                            self.vytvorChyboveOkno("Nelze vyhodnotit vloženou hodnotu")  # Zobrazení chybového okna
+        self.multiTlacitko.setText(self.listTextNaOdstavce(self.vyrazy))  # Aktualizace textu víceúčelového tlačítka
 
+    # Vytváří chybové okno s daným textem
     def vytvorChyboveOkno(self, text : str) -> None:
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Critical)
@@ -227,6 +200,7 @@ class MathGraphApp(QMainWindow):
         msg.setWindowTitle("Chyba")
         msg.exec_()
 
+    # Převádí seznam textových prvků na formátovaný text s odsazením
     def listTextNaOdstavce(self, list : list) -> str:
         wrapper = textwrap.TextWrapper(width=10)
         mezi_list = ""
@@ -235,12 +209,14 @@ class MathGraphApp(QMainWindow):
             mezi_list += "\n "
         return wrapper.fill(text=mezi_list)
 
+    # Ověřuje, zda zadaná pozice na ose y leží uvnitř grafu
     def jeVGrafu (self, pozice_y) -> bool:
         if self.kraj_y <= pozice_y <= (self.kraj_y + self.vyska_grafu):
             return True
         else:
             return False
 
+    # Vykreslí křivku grafu na základě zadaného výrazu a barvy
     def vykresliKrivkuGrafu(self, vyraz, barva) -> None:
         pero = QPen()
         trasa = QPainterPath()
@@ -255,20 +231,20 @@ class MathGraphApp(QMainWindow):
             try:
                 y_hodnoty.append(sp.N(f(a)))
             except ValueError:
-                # handle division by zero error
+                # Řešení chyby dělení nulou
                 y_hodnoty.append(None)
-      
-        #vytvor path pro vyraz
-        #pro kazde číslo na ose
+    
+        # Vytvoří cestu pro vykreslení křivky
+        # Pro každé číslo na ose
         for i in range(len(x_hodnoty)):
-            # převeď normální osu na velikost grafu (vzdálenost od kraje + pulka grafu jelikoz hodnoty jsou od minus do plusu ale grafove hodnoty jsou jen od nuly do plusu + hodnota
+            # Převede normální osu na velikost grafu (vzdálenost od kraje + polovina grafu, jelikož hodnoty jsou od mínusu do plusu, ale grafické hodnoty jsou jen od nuly do plusu, plus hodnota)
             pozice_x = self.kraj_x + self.stred_grafu_x + (x_hodnoty[i]*self.pole_grafu)
             if y_hodnoty[i] is None:
                 pozice_y = 1000
                 trasa.moveTo(pozice_x, pozice_y)
                 predchozi_v_grafu = 0
             else:    
-                pozice_y = self.kraj_y + self.stred_grafu_y - (y_hodnoty[i] * self.pole_grafu) # vytvor y od kraje grafu pulka + pul
+                pozice_y = self.kraj_y + self.stred_grafu_y - (y_hodnoty[i] * self.pole_grafu) # Vytvoří y od kraje grafu, polovina + hodnota
                 if self.jeVGrafu(pozice_y):
                     if predchozi_v_grafu == 0:
                         trasa.moveTo(pozice_x, pozice_y)
@@ -304,13 +280,15 @@ class MathGraphApp(QMainWindow):
         polozka_grafu.setPen(pero)
         self.scene.addItem(polozka_grafu)
 
+    # Ověřuje, zda v zadaném výrazu existuje proměnná x.
     def obsahujeX(self, vyraz) -> bool:
         for element in vyraz:
             if element == "x":
                 return True
         return False
     
-    def vykresliMriz(self, trasa : QPainterPath, pero : QColor, barva : QColor) -> None:
+    # Vykreslí mříž grafu se zadanou barvou
+    def vykresliMriz(self, trasa : QPainterPath, pero : QColor, barva : Qt.GlobalColor) -> None:
         pero.setColor(barva)
         pero.setWidth(1)
         # Vytvoreni hodnot na ose x a samotnych vertikalnich os do prvni pulky
@@ -381,18 +359,20 @@ class MathGraphApp(QMainWindow):
         polozka_grafu = QGraphicsPathItem(trasa)
         polozka_grafu.setPen(pero)
         self.scene.addItem(polozka_grafu)
-        
-    def vykresliPozadi(self, trasa : QPainterPath, pero : QColor, barva : QColor) -> None:
+
+    # Vykreslí pozadí grafu se zadanou barvou
+    def vykresliPozadi(self, trasa : QPainterPath, pero : QColor, barva : Qt.GlobalColor) -> None:
         trasa.addRect(self.kraj_x, self.kraj_y, self.sirka_grafu, self.vyska_grafu)
         polozka_grafu = QGraphicsPathItem(trasa)
         polozka_grafu.setPen(pero)
         polozka_grafu.setBrush(QBrush(QColor(barva)))
         self.scene.addItem(polozka_grafu)
 
+    # Vykreslí osy grafu pomocí zadané cesty a pera
     def vykresliOsy(self, trasa : QPainterPath, pero : QPen) -> None:
 
         pero.setWidth(3)
-        pero.setColor(Qt.darkBlue)
+        pero.setColor(Qt.GlobalColor.darkBlue)
         trasa.moveTo(self.kraj_x + self.stred_grafu_x, self.kraj_y)
         trasa.lineTo(self.kraj_x + self.stred_grafu_x, self.kraj_y + self.vyska_grafu)
         trasa.moveTo(self.kraj_x, self.kraj_y + self.stred_grafu_y)
