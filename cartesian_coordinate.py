@@ -31,6 +31,7 @@ class MathGraphApp(QMainWindow):
         self.barva_pozadi = Qt.GlobalColor.white  # Barva pozadí
         self.barva_mrizi = Qt.GlobalColor.black  # Barva mřížky
         self.darkmode = False  # Režim tmavého módu
+        self.sirka_krivky = 2 # Šířka křivky
 
         # Vypočítání středu grafu
         self.stred_grafu_x = self.sirka_grafu / 2
@@ -43,12 +44,11 @@ class MathGraphApp(QMainWindow):
         self.scene = QGraphicsScene(self)
         self.view.setScene(self.scene)
         self.setWindowTitle('Grafická kalkulačka')
-        self.setGeometry(100, 100, self.sirka_grafu + 200, self.vyska_grafu + 200)
+        self.setGeometry(0, 0, self.sirka_grafu + 200, self.vyska_grafu + 20)
         self.UiComponents()
-        self.vykresliKartezskouSoustavu()
     
     # Funkce na vytváření komponent okna
-    def UiComponents(self) -> None:
+    def UiComponents(self) -> None: 
         # Tlačítko MODE pro změnu módu (světlý/tmavý)
         self.vytvorTlacitko(self, "MODE", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y - self.velikost_tlacitka, self.velikost_tlacitka*2, self.velikost_tlacitka, self.changeMode, self.font_textu, "")
 
@@ -65,6 +65,7 @@ class MathGraphApp(QMainWindow):
         self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x, self.kraj_y + self.velikost_tlacitka, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.GlobalColor.darkMagenta), self.font_textu, "background-color: darkMagenta")
         self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x - self.velikost_tlacitka,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.GlobalColor.cyan), self.font_textu, "background-color: cyan")
         self.vytvorTlacitko(self, "=", self.sirka_grafu + self.kraj_x ,  self.kraj_y + self.velikost_tlacitka * 2, self.velikost_tlacitka, self.velikost_tlacitka, lambda: self.potvrzeni(Qt.GlobalColor.darkCyan), self.font_textu, "background-color: darkCyan")
+        
         # Pole na vypisovani
         self.multiTlacitko = QPushButton("PyQt button", self)
         self.multiTlacitko.setText("Po zmáčknutí\nse vše smaže")
@@ -72,10 +73,14 @@ class MathGraphApp(QMainWindow):
         self.multiTlacitko.clicked.connect(self.smazani)#Co se stane kdyz zmacknu tlacitko
         self.multiTlacitko.setFont(QFont("Arial", 11))
         self.multiTlacitko.setStyleSheet("text-align:top")
-        #Textove pole    
+        
+        #Textove pole
         self.textove_pole = QLineEdit(self)
         self.textove_pole.setGeometry(self.sirka_grafu + self.kraj_x - self.velikost_tlacitka, self.kraj_y + self.velikost_tlacitka * 5, self.velikost_tlacitka * 2, self.velikost_tlacitka)
         self.textove_pole.setFont(self.font_textu)
+        
+        # Vykreslení Kartézské soustavy 
+        self.vykresliKartezskouSoustavu()
     
     # Vytvoření tlačítka s danými vlastnostmi 
     def vytvorTlacitko(self, tlacitko, text : str, ax : int, ay: int, aw : int, ah : int, funkce, font, styl : str) -> QPushButton:
@@ -97,7 +102,7 @@ class MathGraphApp(QMainWindow):
         if styl:
             tlacitko.setStyleSheet(styl)
         return tlacitko
-    
+
     # Změna módu aplikace (světlý/temný režim).
     def changeMode(self) -> None:
         if self.darkmode:
@@ -114,7 +119,7 @@ class MathGraphApp(QMainWindow):
     def priblizeni(self) -> None:
         if self.priblizeni_pocet <= 4:
             self.pole_grafu = self.pole_grafu * 2
-            self.vykresliKartezskouSoustavu()
+
             self.vyhodnotVyrazy(self.vyrazy)
             self.priblizeni_pocet += 1
         else:
@@ -160,6 +165,103 @@ class MathGraphApp(QMainWindow):
         self.vykresliMriz(trasa_mrizi, pero, self.barva_mrizi)
         self.vykresliOsy(trasa_os,pero)
 
+    # Vykreslí pozadí grafu se zadanou barvou
+    def vykresliPozadi(self, trasa : QPainterPath, pero : QColor, barva : Qt.GlobalColor) -> None:
+        trasa.addRect(self.kraj_x, self.kraj_y, self.sirka_grafu, self.vyska_grafu)
+        polozka_grafu = QGraphicsPathItem(trasa)
+        polozka_grafu.setPen(pero)
+        polozka_grafu.setBrush(QBrush(QColor(barva)))
+        self.scene.addItem(polozka_grafu)
+        
+    # Vykreslí mříž grafu se zadanou barvou a s popisky
+    def vykresliMriz(self, trasa: QPainterPath, pero: QColor, barva: Qt.GlobalColor) -> None:
+        pero.setColor(barva)  # Nastavení barvy pera
+        pero.setWidth(1)  # Nastavení tloušťky pera
+        
+        # Vykreslení vertikálních čar a popisků na ose x
+        for i in np.arange(self.stred_grafu_x, self.sirka_grafu, self.pole_grafu):
+            x_popisek_text = (i - self.stred_grafu_x) / self.pole_grafu  # Výpočet hodnoty popisku osy x
+            self.pozice_pera_x = self.kraj_x + i  # Nastavení pozice pera na ose x
+            
+            # Určení počtu desetinných míst v závislosti na hodnotě popisku
+            if -1 < x_popisek_text < 1:
+                pocet_zaokrouhlenych_mist = 3
+            else:
+                pocet_zaokrouhlenych_mist = 1
+                
+            # Vytvoření popisku osy x
+            x_popisek = QGraphicsTextItem(str(round(x_popisek_text, pocet_zaokrouhlenych_mist)))
+            x_popisek.setDefaultTextColor(barva)  # Nastavení barvy popisku
+            x_popisek.setPos(self.pozice_pera_x, self.kraj_y + self.stred_grafu_y)  # Nastavení pozice popisku
+            self.scene.addItem(x_popisek)  # Přidání popisku do scény
+            trasa.moveTo(self.pozice_pera_x, self.kraj_y)  # Přesun na počáteční bod čáry
+            trasa.lineTo(self.pozice_pera_x, self.vyska_grafu + self.kraj_y)  # Nakreslení čáry
+            
+        pocet_zaokrouhlenych_mist = 1
+        
+        # Vykreslení vertikálních čar a popisků na ose y
+        for i in reversed(np.arange(self.kraj_x - 50, self.stred_grafu_x, self.pole_grafu)):
+            x_popisek_text = (i - self.stred_grafu_x) / self.pole_grafu
+            if -1 < x_popisek_text < 1:
+                pocet_zaokrouhlenych_mist = 3
+            else:
+                pocet_zaokrouhlenych_mist = 1   
+            x_popisek = QGraphicsTextItem(str(round(x_popisek_text, pocet_zaokrouhlenych_mist)))
+            x_popisek.setDefaultTextColor(barva)
+            x_popisek.setPos(self.kraj_x + i, self.kraj_y + self.stred_grafu_y)
+            self.scene.addItem(x_popisek)
+            self.pozice_pera_x = self.kraj_x + i
+            trasa.moveTo(self.pozice_pera_x, self.kraj_y)
+            trasa.lineTo(self.pozice_pera_x, self.vyska_grafu + self.kraj_y)    
+
+        # Vykreslení horizontálních čar a popisků na ose y
+        for i in np.arange(self.stred_grafu_y + self.kraj_y - 50, self.vyska_grafu, 50):
+            y_popisek_text = (((i - self.stred_grafu_y) / self.pole_grafu) * - 1)
+            if -1 < y_popisek_text < 1:
+                round(y_popisek_text, 3)
+            else:
+                round(y_popisek_text, 1)
+            y_popisek = QGraphicsTextItem(str(round(y_popisek_text, pocet_zaokrouhlenych_mist)))
+            y_popisek.setPos(self.kraj_x + self.stred_grafu_x, self.kraj_y + i)
+            y_popisek.setDefaultTextColor(barva)
+            self.scene.addItem(y_popisek)
+            self.graph_y_pen = self.kraj_y + i
+            trasa.moveTo(self.kraj_x, self.graph_y_pen)
+            trasa.lineTo(self.sirka_grafu + self.kraj_x, self.graph_y_pen)
+
+        for i in reversed(np.arange(self.kraj_y - 50, self.stred_grafu_y, self.pole_grafu)):
+            y_popisek_text = (i - self.stred_grafu_y) / self.pole_grafu * - 1
+            if -1 < y_popisek_text < 1:
+                round(y_popisek_text, 3)
+            else:
+                round(y_popisek_text, 1)
+            y_popisek = QGraphicsTextItem(str(round(y_popisek_text, pocet_zaokrouhlenych_mist)))
+            y_popisek.setPos(self.kraj_x + self.stred_grafu_x, self.kraj_y + i)
+            y_popisek.setDefaultTextColor(barva)
+            self.scene.addItem(y_popisek)
+            self.graph_y_pen = self.kraj_y + i
+            trasa.moveTo(self.kraj_x, self.graph_y_pen)
+            trasa.lineTo(self.sirka_grafu + self.kraj_x, self.graph_y_pen)
+        
+        # Vytvoření QGraphicsPathItem pro zobrazení grafu
+        polozka_grafu = QGraphicsPathItem(trasa)
+        polozka_grafu.setPen(pero)
+        self.scene.addItem(polozka_grafu)
+
+    # Vykreslí osy grafu pomocí zadané cesty a pera
+    def vykresliOsy(self, trasa : QPainterPath, pero : QPen) -> None:
+
+        pero.setWidth(3)
+        pero.setColor(Qt.GlobalColor.darkBlue)
+        trasa.moveTo(self.kraj_x + self.stred_grafu_x, self.kraj_y)
+        trasa.lineTo(self.kraj_x + self.stred_grafu_x, self.kraj_y + self.vyska_grafu)
+        trasa.moveTo(self.kraj_x, self.kraj_y + self.stred_grafu_y)
+        trasa.lineTo(self.kraj_x + self.sirka_grafu,  self.kraj_y + self.stred_grafu_y)
+        
+        polozka_grafu = QGraphicsPathItem(trasa)
+        polozka_grafu.setPen(pero)
+        self.scene.addItem(polozka_grafu)
+
     # Vyhodnocení a zobrazení všech výrazů
     def vyhodnotVyrazy(self, vyrazy: list) -> None:
         self.vykresliKartezskouSoustavu()  # Vyresetování vykreslení kartézské soustavy
@@ -192,6 +294,13 @@ class MathGraphApp(QMainWindow):
                             self.vytvorChyboveOkno("Nelze vyhodnotit vloženou hodnotu")  # Zobrazení chybového okna
         self.multiTlacitko.setText(self.listTextNaOdstavce(self.vyrazy))  # Aktualizace textu víceúčelového tlačítka
 
+    # Ověřuje, zda v zadaném výrazu existuje proměnná x.
+    def obsahujeX(self, vyraz) -> bool:
+        for element in vyraz:
+            if element == "x":
+                return True
+        return False
+
     # Vytváří chybové okno s daným textem
     def vytvorChyboveOkno(self, text : str) -> None:
         msg = QMessageBox()
@@ -203,25 +312,18 @@ class MathGraphApp(QMainWindow):
     # Převádí seznam textových prvků na formátovaný text s odsazením
     def listTextNaOdstavce(self, list : list) -> str:
         wrapper = textwrap.TextWrapper(width=10)
-        mezi_list = ""
+        text_odstavce = ""
         for i in list:
-            mezi_list += i
-            mezi_list += "\n "
-        return wrapper.fill(text=mezi_list)
-
-    # Ověřuje, zda zadaná pozice na ose y leží uvnitř grafu
-    def jeVGrafu (self, pozice_y) -> bool:
-        if self.kraj_y <= pozice_y <= (self.kraj_y + self.vyska_grafu):
-            return True
-        else:
-            return False
+            text_odstavce += wrapper.fill(text=i)
+            text_odstavce += "\n "
+        return text_odstavce
 
     # Vykreslí křivku grafu na základě zadaného výrazu a barvy
     def vykresliKrivkuGrafu(self, vyraz, barva) -> None:
         pero = QPen()
         trasa = QPainterPath()
         predchozi_v_grafu = 0 # Pokud byla None 0, pokud v 1, pokud nad 2 a pokud pod 3
-        pero.setWidth(2)
+        pero.setWidth(self.sirka_krivky)
         pero.setColor(barva)
 
         x_hodnoty = np.arange(-(self.stred_grafu_x)/self.pole_grafu, self.stred_grafu_x/self.pole_grafu, 1/100)
@@ -280,109 +382,12 @@ class MathGraphApp(QMainWindow):
         polozka_grafu.setPen(pero)
         self.scene.addItem(polozka_grafu)
 
-    # Ověřuje, zda v zadaném výrazu existuje proměnná x.
-    def obsahujeX(self, vyraz) -> bool:
-        for element in vyraz:
-            if element == "x":
-                return True
-        return False
-    
-    # Vykreslí mříž grafu se zadanou barvou
-    def vykresliMriz(self, trasa : QPainterPath, pero : QColor, barva : Qt.GlobalColor) -> None:
-        pero.setColor(barva)
-        pero.setWidth(1)
-        # Vytvoreni hodnot na ose x a samotnych vertikalnich os do prvni pulky
-        for i  in np.arange (self.stred_grafu_x, self.sirka_grafu, 50) :
-            x_popisek_text = (i - self.stred_grafu_x) / self.pole_grafu # Co bude na danem popisku
-            self.pozice_pera_x = self.kraj_x + i #Pozice pera na ose x
-        
-            if -1 < x_popisek_text < 1: # Pokud je cislo mensi nez 1 zvetsim pocet cisel za desetinou carkou
-                pocet_zaokrouhlenych_mist = 3
-            else: # Jinak pouze jedno cislo za desetinou carkou
-                pocet_zaokrouhlenych_mist = 1
-            
-            x_popisek = QGraphicsTextItem(str(round(x_popisek_text, pocet_zaokrouhlenych_mist))) # Zaokrouhleni a nasledne vytvoreni popisku osy
-            x_popisek.setDefaultTextColor(barva)
-            x_popisek.setPos(self.pozice_pera_x, self.kraj_y + self.stred_grafu_y)
-            self.scene.addItem(x_popisek)
-            trasa.moveTo(self.pozice_pera_x, self.kraj_y)
-            trasa.lineTo(self.pozice_pera_x, self.vyska_grafu + self.kraj_y)
-    
-        pocet_zaokrouhlenych_mist = 1
-
-        # Vytvoreni hodnot na ose y a samotnych vertikalnich os
-        for i  in reversed(np.arange (self.kraj_x - 50, self.stred_grafu_x, 50)) : # serazena cisla od  
-            x_popisek_text = (i - self.stred_grafu_x) / self.pole_grafu
-            if -1 < x_popisek_text < 1:
-                pocet_zaokrouhlenych_mist = 3
-            else:
-                pocet_zaokrouhlenych_mist = 1   
-            x_popisek = QGraphicsTextItem(str (round (x_popisek_text, pocet_zaokrouhlenych_mist)))
-            x_popisek.setDefaultTextColor(barva)
-            x_popisek.setPos(self.kraj_x + i, self.kraj_y + self.stred_grafu_y)
-            self.scene.addItem(x_popisek)
-            # Zacni ve stredu a udelej caru dolu
-            self.pozice_pera_x = self.kraj_x + i
-            trasa.moveTo(self.pozice_pera_x, self.kraj_y)
-            trasa.lineTo(self.pozice_pera_x, self.vyska_grafu + self.kraj_y)    
-
-        # Horizontalni cary
-        for i  in np.arange (self.stred_grafu_y + self.kraj_y - 50, self.vyska_grafu, 50) :
-            y_popisek_text = (((i - self.stred_grafu_y) / self.pole_grafu) * - 1)
-            if -1 < y_popisek_text < 1:
-                round(y_popisek_text, 3)
-            else:
-                round(y_popisek_text, 1)
-            y_popisek = QGraphicsTextItem(str (round (y_popisek_text, pocet_zaokrouhlenych_mist)))
-            y_popisek.setPos(self.kraj_x + self.stred_grafu_x, self.kraj_y + i)
-            y_popisek.setDefaultTextColor(barva)
-            self.scene.addItem(y_popisek)
-            self.graph_y_pen = self.kraj_y + i
-            trasa.moveTo(self.kraj_x, self.graph_y_pen)
-            trasa.lineTo(self.sirka_grafu + self.kraj_x, self.graph_y_pen)
-
-        for i  in reversed(np.arange (self.kraj_y - 50, self.stred_grafu_y, 50)) :
-            y_popisek_text = (i - self.stred_grafu_y) / self.pole_grafu * - 1
-            if -1 < y_popisek_text < 1:
-                round(y_popisek_text, 3)
-            else:
-                round(y_popisek_text, 1)
-            y_popisek = QGraphicsTextItem(str (round (y_popisek_text, pocet_zaokrouhlenych_mist)))
-            y_popisek.setPos(self.kraj_x + self.stred_grafu_x, self.kraj_y + i)
-            y_popisek.setDefaultTextColor(barva)
-            self.scene.addItem(y_popisek)
-            self.graph_y_pen = self.kraj_y + i
-            trasa.moveTo(self.kraj_x, self.graph_y_pen)
-            trasa.lineTo(self.sirka_grafu + self.kraj_x, self.graph_y_pen)
-    
-        # Create a QGraphicsPathItem to display the graph
-        polozka_grafu = QGraphicsPathItem(trasa)
-        polozka_grafu.setPen(pero)
-        self.scene.addItem(polozka_grafu)
-
-    # Vykreslí pozadí grafu se zadanou barvou
-    def vykresliPozadi(self, trasa : QPainterPath, pero : QColor, barva : Qt.GlobalColor) -> None:
-        trasa.addRect(self.kraj_x, self.kraj_y, self.sirka_grafu, self.vyska_grafu)
-        polozka_grafu = QGraphicsPathItem(trasa)
-        polozka_grafu.setPen(pero)
-        polozka_grafu.setBrush(QBrush(QColor(barva)))
-        self.scene.addItem(polozka_grafu)
-
-    # Vykreslí osy grafu pomocí zadané cesty a pera
-    def vykresliOsy(self, trasa : QPainterPath, pero : QPen) -> None:
-
-        pero.setWidth(3)
-        pero.setColor(Qt.GlobalColor.darkBlue)
-        trasa.moveTo(self.kraj_x + self.stred_grafu_x, self.kraj_y)
-        trasa.lineTo(self.kraj_x + self.stred_grafu_x, self.kraj_y + self.vyska_grafu)
-        trasa.moveTo(self.kraj_x, self.kraj_y + self.stred_grafu_y)
-        trasa.lineTo(self.kraj_x + self.sirka_grafu,  self.kraj_y + self.stred_grafu_y)
-        
-        polozka_grafu = QGraphicsPathItem(trasa)
-        polozka_grafu.setPen(pero)
-        self.scene.addItem(polozka_grafu)
-
-
+    # Ověřuje, zda zadaná pozice na ose y leží uvnitř grafu
+    def jeVGrafu (self, pozice_y) -> bool:
+        if self.kraj_y <= pozice_y <= (self.kraj_y + self.vyska_grafu):
+            return True
+        else:
+            return False
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
